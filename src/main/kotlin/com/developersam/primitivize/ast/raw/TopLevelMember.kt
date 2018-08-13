@@ -1,0 +1,113 @@
+package com.developersam.primitivize.ast.raw
+
+import com.developersam.primitivize.ast.common.FunctionCategory
+import com.developersam.primitivize.ast.type.ExprType
+import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
+import com.developersam.primitivize.ast.decorated.DecoratedExpression
+import com.developersam.primitivize.environment.TypeEnv
+import com.developersam.primitivize.exceptions.UnexpectedTypeError
+
+/**
+ * [TopLevelMember] defines a set of supported top level members.
+ */
+sealed class TopLevelMember {
+
+    /**
+     * [typeCheck] tries to type check this class member under the given [TypeEnv] [env].
+     * It returns a decorated class member and a new environment after type check.
+     */
+    internal abstract fun typeCheck(env: TypeEnv): Pair<DecoratedTopLevelMember, TypeEnv>
+
+    /**
+     * [Constant] represents a constant declaration of the form:
+     * `val` [identifier] `=` [expr],
+     * with [identifier] at [identifierLineNo].
+     *
+     * @property identifierLineNo identifier line number of the constant.
+     * @property identifier identifier of the constant.
+     * @property expr expression of the constant.
+     */
+    data class Constant(
+            val identifierLineNo: Int,
+            val identifier: String,
+            val expr: Expression
+    ) : TopLevelMember() {
+
+        override fun typeCheck(env: TypeEnv): Pair<DecoratedTopLevelMember, TypeEnv> {
+            val decoratedExpr = expr.typeCheck(environment = env)
+            val decoratedConstant = DecoratedTopLevelMember.Constant(
+                    identifier = identifier, expr = decoratedExpr,
+                    type = decoratedExpr.type
+            )
+            val e = env.put(key = identifier, value = decoratedExpr.type)
+            return decoratedConstant to e
+        }
+
+    }
+
+    /**
+     * [Function] represents a function declaration of the form:
+     * `fun` [identifier] ([arguments]) `:` [returnType] `=` [body],
+     * with [identifier] at [identifierLineNo].
+     * The function [category] defines its behavior during type checking, interpretation, and code
+     * generation.
+     *
+     * @property category category of the function.
+     * @property identifierLineNo the line number of the identifier for the function.
+     * @property identifier the identifier for the function.
+     * @property arguments a list of arguments passed to the function.
+     * @property returnType type of the return value.
+     * @property body body part of the function.
+     */
+    data class Function(
+            val category: FunctionCategory = FunctionCategory.USER_DEFINED,
+            val identifierLineNo: Int, val identifier: String,
+            val arguments: List<Pair<String, ExprType>>,
+            val returnType: ExprType, val body: Expression
+    ) : TopLevelMember() {
+
+        override fun typeCheck(env: TypeEnv): Pair<DecoratedTopLevelMember, TypeEnv> {
+            val bodyExpr: DecoratedExpression = when (category) {
+                FunctionCategory.PROVIDED -> DecoratedExpression.Dummy // Don't check given ones
+                FunctionCategory.USER_DEFINED -> {
+                    val e = body.typeCheck(environment = env)
+                    val bodyType = e.type
+                    UnexpectedTypeError.check(
+                            lineNo = identifierLineNo, expectedType = returnType,
+                            actualType = bodyType
+                    )
+                    e
+                }
+            }
+            val decoratedFunction = DecoratedTopLevelMember.Function(
+                    category = category, identifier = identifier,
+                    arguments = arguments, returnType = returnType, body = bodyExpr
+            )
+            val e = env.put(key = identifier, value = decoratedFunction.type)
+            return decoratedFunction to e
+        }
+
+    }
+
+    internal companion object {
+
+        /**
+         * [typeCheck] type checks all the members with current [env].
+         */
+        fun List<TopLevelMember>.typeCheck(
+                env: TypeEnv
+        ): Pair<List<DecoratedTopLevelMember>, TypeEnv> {
+            val typeCheckedMembers = ArrayList<DecoratedTopLevelMember>(size)
+            var currentEnv = env
+            for (member in this) {
+                val (typeCheckedMember, newE) = member.typeCheck(env = currentEnv)
+                typeCheckedMembers.add(element = typeCheckedMember)
+                currentEnv = newE
+            }
+            return typeCheckedMembers to currentEnv
+        }
+
+    }
+
+}
+
