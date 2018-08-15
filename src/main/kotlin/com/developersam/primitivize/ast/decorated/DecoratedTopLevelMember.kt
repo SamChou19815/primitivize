@@ -68,26 +68,22 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
 
     /**
      * [Function] represents a function declaration of the form:
-     * `fun` [identifier] ([arguments]) `:` [returnType] `=` [body].
+     * `fun` [identifier] () `:` [returnType] `=` [body].
      * The function [category] defines its behavior during type checking, interpretation, and code
      * generation.
      * It has an additional [type] field.
      *
      * @property category category of the function.
-     * @property arguments a list of arguments passed to the function.
      * @property returnType type of the return value.
      * @property body body part of the function.
      * @property type of the entire function.
      */
     data class Function(
             val category: FunctionCategory, override val identifier: String,
-            val arguments: List<Pair<String, ExprType>>,
             val returnType: ExprType, val body: DecoratedExpression
     ) : DecoratedTopLevelMember() {
 
-        override val type: ExprType = ExprType.Function(
-                argumentTypes = arguments.map { it.second }, returnType = returnType
-        )
+        override val type: ExprType = ExprType.Function(returnType = returnType)
 
         /**
          * @see CodeConvertible.acceptConversion

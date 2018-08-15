@@ -24,25 +24,20 @@ private fun Type.toAllowedTypeExpr(): ExprType? = when (typeName) {
 }
 
 /**
- * [Method.toTypeInfo] converts the method to an equivalent [ExprType.Function] in this programming
+ * [Method.toFunType] converts the method to an equivalent [ExprType.Function] in this programming
  * language if possible.
  * If it is impossible due to some rules, it will throw [DisallowedRuntimeFunctionError].
  */
-private fun Method.toTypeInfo(): ExprType.Function {
+private fun Method.toFunType(): ExprType.Function {
     if (typeParameters.isNotEmpty()) {
         throw DisallowedRuntimeFunctionError()
     }
-    val parameterTypes = genericParameterTypes
-            .asSequence()
-            .map { it.toAllowedTypeExpr() }
-            .filterNotNull()
-            .toList()
-    if (parameterTypes.size != genericParameterTypes.size) {
+    if (genericParameterTypes.isNotEmpty()) {
         throw DisallowedRuntimeFunctionError()
     }
     val returnType = this.returnType.toAllowedTypeExpr()
             ?: throw DisallowedRuntimeFunctionError()
-    return ExprType.Function(argumentTypes = parameterTypes, returnType = returnType)
+    return ExprType.Function(returnType = returnType)
 }
 
 /**
@@ -53,7 +48,7 @@ private fun R.toAnnotatedFunctionSequence(): Sequence<Pair<String, ExprType>> =
         this::class.java.methods.asSequence()
                 .filter { Modifier.isStatic(it.modifiers) }
                 .filter { it.getAnnotation(RuntimeFunction::class.java) != null }
-                .map { it.name to it.toTypeInfo() }
+                .map { it.name to it.toFunType() }
 
 /**
  * [toAnnotatedFunctions] converts the library instance to a list of pairs of the form
@@ -69,10 +64,9 @@ internal fun R.toAnnotatedFunctions(): List<Pair<String, ExprType>> =
 private fun Pair<String, ExprType>.toFunctionMember(c: FunctionCategory): TopLevelMember.Function {
     val (name, type) = this
     val functionType = type as ExprType.Function
-    val arguments = functionType.argumentTypes.mapIndexed { i, t -> "var$i" to t }
     return TopLevelMember.Function(
             category = c, identifierLineNo = -1, identifier = name,
-            arguments = arguments, returnType = functionType.returnType,
+            returnType = functionType.returnType,
             body = LiteralExpr(lineNo = 0, literal = Literal.Int(value = 0)) // dummy expression
     )
 }

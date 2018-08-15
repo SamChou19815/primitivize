@@ -6,13 +6,10 @@ program : variableDeclaration* functionDeclaration+ EOF;
 
 variableDeclaration: VAR LowerIdentifier ASSIGN expression;
 
-functionDeclaration : FUN LowerIdentifier argumentDeclarations typeAnnotation ASSIGN expression;
+functionDeclaration : FUN LowerIdentifier LPAREN RPAREN typeAnnotation ASSIGN expression;
 
 // Some parser type fragment
 typeAnnotation : COLON type;
-annotatedVariable : LowerIdentifier typeAnnotation;
-emptyParen : LPAREN RPAREN;
-argumentDeclarations : emptyParen | (LPAREN annotatedVariable (COMMA annotatedVariable)* RPAREN);
 
 expression
     : LPAREN expression RPAREN # NestedExpr
@@ -25,7 +22,7 @@ expression
     | expression AND expression # ConjunctionExpr
     | expression OR expression # DisjunctionExpr
     | IF expression THEN expression ELSE expression # IfElseExpr
-    | expression (emptyParen | (LPAREN expression (COMMA expression)* RPAREN)) # FunAppExpr
+    | expression LPAREN RPAREN # FunAppExpr
     | LowerIdentifier ASSIGN expression # AssignExpr
     | expression SEMICOLON expression # ChainExpr
     ;

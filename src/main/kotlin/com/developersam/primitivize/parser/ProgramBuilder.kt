@@ -29,7 +29,6 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
             TopLevelMember.Function(
                     identifierLineNo = ctx.LowerIdentifier().symbol.line,
                     identifier = ctx.LowerIdentifier().text,
-                    arguments = ctx.argumentDeclarations().accept(ArgumentDeclarationsBuilder),
                     returnType = ctx.typeAnnotation().type().accept(TypeBuilder),
                     body = ctx.expression().accept(ExprBuilder)
             )

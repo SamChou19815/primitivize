@@ -199,20 +199,18 @@ data class IfElseExpr(
 
 /**
  * [FunctionApplicationExpr] is the function application expression, with [functionExpr] as the
- * function and [arguments] as arguments of the function at [lineNo].
+ * function of the function at [lineNo].
  *
  * @property functionExpr the function expression to apply.
- * @property arguments arguments to supply.
  */
 data class FunctionApplicationExpr(
-        override val lineNo: Int, val functionExpr: Expression, val arguments: List<Expression>
+        override val lineNo: Int, val functionExpr: Expression
 ) : Expression() {
 
     /**
      * @see Expression.typeCheck
      */
     override fun typeCheck(environment: TypeEnv): DecoratedExpression {
-        val decoratedArguments = arguments.map { it.typeCheck(environment = environment) }
         val decoratedFunctionExpr = functionExpr.typeCheck(environment = environment)
         val functionTypeOpt = decoratedFunctionExpr.type
         val functionType = functionTypeOpt as? ExprType.Function
@@ -220,25 +218,8 @@ data class FunctionApplicationExpr(
                         lineNo = functionExpr.lineNo, expectedType = "<function>",
                         actualType = functionTypeOpt
                 )
-        val expectedArgumentTypes = functionType.argumentTypes
-        val expectedArgsSize = expectedArgumentTypes.size
-        val actualArgsSize = decoratedArguments.size
-        if (expectedArgsSize != actualArgsSize) {
-            throw WrongNumberOfArgsError(
-                    lineNo = lineNo, expected = expectedArgsSize, actual = actualArgsSize
-            )
-        }
-        for (i in decoratedArguments.indices) {
-            val decoratedExpr = decoratedArguments[i]
-            val expType = expectedArgumentTypes[i]
-            val exprType = decoratedExpr.type
-            UnexpectedTypeError.check(
-                    lineNo = arguments[i].lineNo, expectedType = expType, actualType = exprType
-            )
-        }
         return DecoratedExpression.FunctionApplication(
-                functionExpr = decoratedFunctionExpr, arguments = decoratedArguments,
-                type = functionType.returnType
+                functionExpr = decoratedFunctionExpr, type = functionType.returnType
         )
     }
 

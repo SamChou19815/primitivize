@@ -237,14 +237,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
 
     /**
      * [FunctionApplication] with correct [type] is the function application expression,
-     * with [functionExpr] as the function and [arguments] as arguments of the function.
+     * with [functionExpr] as the function expression.
      *
      * @property functionExpr the function expression to apply.
-     * @property arguments arguments to supply.
      */
     data class FunctionApplication(
-            val functionExpr: DecoratedExpression, val arguments: List<DecoratedExpression>,
-            override val type: ExprType
+            val functionExpr: DecoratedExpression, override val type: ExprType
     ) : DecoratedExpression(precedenceLevel = 9) {
 
         /**
@@ -258,9 +256,7 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
                 FunctionApplication(
-                        functionExpr = functionExpr.replaceVariable(from, to),
-                        arguments = arguments.map { it.replaceVariable(from, to) },
-                        type = type
+                        functionExpr = functionExpr.replaceVariable(from, to), type = type
                 )
 
         /**
@@ -268,8 +264,7 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun rename(service: VariableRenamingService): DecoratedExpression =
                 FunctionApplication(
-                        functionExpr = functionExpr.rename(service = service),
-                        arguments = arguments, type = type
+                        functionExpr = functionExpr.rename(service = service), type = type
                 )
 
     }

@@ -60,7 +60,7 @@ class RuntimeProcessorTest {
     @Test
     fun onePublicFunctionTest() {
         testCorrectness(lib = RuntimeLibraryWithOnePublicFunction, expectedOutput = listOf(
-                "ab" to ExprType.Function(emptyList(), ExprType.Unit)
+                "ab" to ExprType.Function(ExprType.Unit)
         ))
     }
 
@@ -88,7 +88,6 @@ class RuntimeProcessorTest {
         @RuntimeFunction
         @JvmStatic
         fun <T : Any> objectToString(obj: T): String = obj.toString()
-
     }
 
     /**

@@ -103,17 +103,10 @@ internal object ExprBuilder : PLBaseVisitor<Expression>() {
                     e2 = ctx.expression(2).accept(this)
             )
 
-    override fun visitFunAppExpr(ctx: PLParser.FunAppExprContext): Expression {
-        val exprContextList = ctx.expression()
-        val functionExpr = exprContextList[0].accept(this)
-        val arguments = arrayListOf<Expression>()
-        for (i in 1 until exprContextList.size) {
-            arguments.add(exprContextList[i].accept(this))
-        }
-        return FunctionApplicationExpr(
-                lineNo = ctx.start.line, functionExpr = functionExpr, arguments = arguments
-        )
-    }
+    override fun visitFunAppExpr(ctx: PLParser.FunAppExprContext): Expression =
+            FunctionApplicationExpr(
+                    lineNo = ctx.start.line, functionExpr = ctx.expression().accept(this)
+            )
 
     override fun visitAssignExpr(ctx: PLParser.AssignExprContext): Expression =
             AssignExpr(

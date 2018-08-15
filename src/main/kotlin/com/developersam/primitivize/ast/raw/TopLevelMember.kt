@@ -51,7 +51,7 @@ sealed class TopLevelMember {
 
     /**
      * [Function] represents a function declaration of the form:
-     * `fun` [identifier] ([arguments]) `:` [returnType] `=` [body],
+     * `fun` [identifier] () `:` [returnType] `=` [body],
      * with [identifier] at [identifierLineNo].
      * The function [category] defines its behavior during type checking, interpretation, and code
      * generation.
@@ -59,14 +59,12 @@ sealed class TopLevelMember {
      * @property category category of the function.
      * @property identifierLineNo the line number of the identifier for the function.
      * @property identifier the identifier for the function.
-     * @property arguments a list of arguments passed to the function.
      * @property returnType type of the return value.
      * @property body body part of the function.
      */
     data class Function(
             val category: FunctionCategory = FunctionCategory.USER_DEFINED,
             val identifierLineNo: Int, val identifier: String,
-            val arguments: List<Pair<String, ExprType>>,
             val returnType: ExprType, val body: Expression
     ) : TopLevelMember() {
 
@@ -84,8 +82,8 @@ sealed class TopLevelMember {
                 }
             }
             val decoratedFunction = DecoratedTopLevelMember.Function(
-                    category = category, identifier = identifier,
-                    arguments = arguments, returnType = returnType, body = bodyExpr
+                    category = category, identifier = identifier, returnType = returnType,
+                    body = bodyExpr
             )
             val e = env.put(key = identifier, value = decoratedFunction.type)
             return decoratedFunction to e

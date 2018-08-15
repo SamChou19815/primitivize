@@ -53,10 +53,8 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
         val header = StringBuilder().apply {
             append("fun ")
             append(node.identifier)
-            node.arguments.joinToString(separator = ", ", prefix = "(", postfix = ")") { (n, t) ->
-                "$n: $t"
-            }.run { append(this) }
-            append(": ").append(node.returnType.toString()).append(" =")
+            append("(): ")
+            append(node.returnType.toString()).append(" =")
         }.toString()
         q.addLine(line = header)
         q.indentAndApply { node.body.acceptConversion(converter = this@PrettyPrinter) }
@@ -91,11 +89,7 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
     }
 
     override fun convert(node: DecoratedExpression.FunctionApplication) {
-        val functionCode = node.functionExpr.toOneLineCode(parent = node)
-        val argumentCode = node.arguments.joinToString(
-                separator = ", ", prefix = "(", postfix = ")"
-        ) { it.toOneLineCode() }
-        q.addLine(line = "$functionCode$argumentCode")
+        q.addLine(line = "${node.functionExpr.toOneLineCode(parent = node)}()")
     }
 
     override fun convert(node: DecoratedExpression.Assign) {
