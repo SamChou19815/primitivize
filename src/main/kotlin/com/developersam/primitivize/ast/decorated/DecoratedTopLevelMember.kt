@@ -31,16 +31,17 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
     internal abstract fun rename(service: VariableRenamingService): DecoratedTopLevelMember
 
     /**
-     * [Constant] represents a constant declaration of the form:
-     * `val` [identifier] `=` [expr].
+     * [Variable] represents a constant declaration of the form:
+     * `var` [identifier] `=` [expr].
      * It has an additional [type] field.
      *
      * @property expr expression of the constant.
      */
-    data class Constant(
-            override val identifier: String, val expr: DecoratedExpression,
-            override val type: ExprType
+    data class Variable(
+            override val identifier: String, val expr: DecoratedExpression
     ) : DecoratedTopLevelMember() {
+
+        override val type: ExprType = ExprType.Int
 
         /**
          * @see CodeConvertible.acceptConversion
@@ -51,11 +52,11 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
         /**
          * @see DecoratedTopLevelMember.replaceVariable
          */
-        override fun replaceVariable(from: String, to: String): DecoratedTopLevelMember {
-            val newName = if (identifier == from) to else identifier
-            val newExpr = expr.replaceVariable(from = from, to = to)
-            return Constant(identifier = newName, expr = newExpr, type = type)
-        }
+        override fun replaceVariable(from: String, to: String): DecoratedTopLevelMember =
+                Variable(
+                        identifier = if (identifier == from) to else identifier,
+                        expr = expr.replaceVariable(from = from, to = to)
+                )
 
         /**
          * @see DecoratedTopLevelMember.rename

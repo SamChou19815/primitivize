@@ -103,7 +103,7 @@ data class NotExpr(override val lineNo: Int, val expr: Expression) : Expression(
  * @property op the operator.
  * @property right right part.
  */
-internal data class BinaryExpr(
+data class BinaryExpr(
         override val lineNo: Int,
         val left: Expression, val op: BinaryOperator, val right: Expression
 ) : Expression() {
@@ -170,7 +170,7 @@ internal data class BinaryExpr(
  * @property e1 expression of the first branch.
  * @property e2 expression of the second branch.
  */
-internal data class IfElseExpr(
+data class IfElseExpr(
         override val lineNo: Int, val condition: Expression, val e1: Expression, val e2: Expression
 ) : Expression() {
 
@@ -204,7 +204,7 @@ internal data class IfElseExpr(
  * @property functionExpr the function expression to apply.
  * @property arguments arguments to supply.
  */
-internal data class FunctionApplicationExpr(
+data class FunctionApplicationExpr(
         override val lineNo: Int, val functionExpr: Expression, val arguments: List<Expression>
 ) : Expression() {
 
@@ -245,33 +245,45 @@ internal data class FunctionApplicationExpr(
 }
 
 /**
- * [LetExpr] represents the let expression at [lineNo] of the form
- * `let` [identifier] `=` [e1] `;` [e2].
- * If [identifier] is `null`, it means it's a wildcard.
+ * [AssignExpr] represents the assign expression at [lineNo] of the form [identifier] `=` [expr].
  *
  * @property identifier new identifier to name.
- * @property e1 the expression for the identifier.
- * @property e2 the expression after the let.
+ * @property expr the expression for the identifier.
  */
-internal data class LetExpr(
-        override val lineNo: Int, val identifier: String?, val e1: Expression, val e2: Expression
+data class AssignExpr(
+        override val lineNo: Int, val identifier: String, val expr: Expression
 ) : Expression() {
 
     /**
      * @see Expression.typeCheck
      */
     override fun typeCheck(environment: TypeEnv): DecoratedExpression {
-        if (identifier != null && environment[identifier] != null) {
+        if (environment[identifier] != null) {
             throw IdentifierError.ShadowedName(lineNo, identifier)
         }
-        val decoratedE1 = e1.typeCheck(environment = environment)
-        val newEnv = identifier?.let { environment.put(key = it, value = decoratedE1.type) }
-                ?: environment
-        val decoratedE2 = e2.typeCheck(environment = newEnv)
-        val e2Type = decoratedE2.type
-        return DecoratedExpression.Let(
-                identifier = identifier, e1 = decoratedE1, e2 = decoratedE2, type = e2Type
-        )
+        val decoratedExpr = expr.typeCheck(environment = environment)
+        return DecoratedExpression.Assign(identifier = identifier, expr = decoratedExpr)
     }
+
+}
+
+/**
+ * [ChainExpr] represents the chaining expression at [lineNo] of the form [e1] `;` [e2].
+ *
+ * @property e1 the first expression.
+ * @property e2 the second expression.
+ */
+data class ChainExpr(
+        override val lineNo: Int, val e1: Expression, val e2: Expression
+) : Expression() {
+
+    /**
+     * @see Expression.typeCheck
+     */
+    override fun typeCheck(environment: TypeEnv): DecoratedExpression =
+            DecoratedExpression.Chain(
+                    e1 = e1.typeCheck(environment = environment),
+                    e2 = e2.typeCheck(environment = environment)
+            )
 
 }

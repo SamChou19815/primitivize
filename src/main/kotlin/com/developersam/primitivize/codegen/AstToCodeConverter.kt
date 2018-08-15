@@ -19,7 +19,7 @@ interface AstToCodeConverter {
     /**
      * [convert] converts the given [node] to target code by recording well-indented code info.
      */
-    fun convert(node: DecoratedTopLevelMember.Constant)
+    fun convert(node: DecoratedTopLevelMember.Variable)
 
     /**
      * [convert] converts the given [node] to target code by recording well-indented code info.
@@ -59,6 +59,11 @@ interface AstToCodeConverter {
     /**
      * [convert] converts the given [node] to target code by recording well-indented code info.
      */
-    fun convert(node: DecoratedExpression.Let)
+    fun convert(node: DecoratedExpression.Assign)
+
+    /**
+     * [convert] converts the given [node] to target code by recording well-indented code info.
+     */
+    fun convert(node: DecoratedExpression.Chain)
 
 }

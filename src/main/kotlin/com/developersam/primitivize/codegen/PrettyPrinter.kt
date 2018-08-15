@@ -31,7 +31,10 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
                 if (hasLowerPrecedence(parent = parent)) "($code)" else code
             }
 
-    override fun convert(node: DecoratedProgram): Unit = node.members.convert()
+    override fun convert(node: DecoratedProgram) {
+        node.variables.convert()
+        node.functions.convert()
+    }
 
     /**
      * [convert] converts a list of [DecoratedTopLevelMember] to code.
@@ -39,9 +42,8 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
     private fun List<DecoratedTopLevelMember>.convert(): Unit =
             forEach { it.acceptConversion(converter = this@PrettyPrinter) }
 
-
-    override fun convert(node: DecoratedTopLevelMember.Constant) {
-        val header = StringBuilder().append("val ").append(node.identifier).append(" =").toString()
+    override fun convert(node: DecoratedTopLevelMember.Variable) {
+        val header = StringBuilder().append("var ").append(node.identifier).append(" =").toString()
         q.addLine(line = header)
         q.indentAndApply { node.expr.acceptConversion(converter = this@PrettyPrinter) }
         q.addEmptyLine()
@@ -96,15 +98,16 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
         q.addLine(line = "$functionCode$argumentCode")
     }
 
-    override fun convert(node: DecoratedExpression.Let) {
-        val e1Code = node.e1.toOneLineCode(parent = node)
-        val letLine = if (node.identifier == null) {
-            "val _ = $e1Code;"
-        } else {
-            "val ${node.identifier} = $e1Code;"
-        }
+    override fun convert(node: DecoratedExpression.Assign) {
+        val code = node.expr.toOneLineCode(parent = node)
+        val letLine = "val ${node.identifier} = $code;"
         q.addLine(line = letLine)
-        node.e2.acceptConversion(converter = this)
+    }
+
+    override fun convert(node: DecoratedExpression.Chain) {
+        val c1 = node.e1.toOneLineCode(parent = node)
+        val c2 = node.e2.toOneLineCode(parent = node)
+        q.addLine(line = "$c1; $c2")
     }
 
     companion object {

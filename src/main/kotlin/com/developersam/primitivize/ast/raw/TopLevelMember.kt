@@ -1,9 +1,9 @@
 package com.developersam.primitivize.ast.raw
 
 import com.developersam.primitivize.ast.common.FunctionCategory
-import com.developersam.primitivize.ast.type.ExprType
-import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
 import com.developersam.primitivize.ast.decorated.DecoratedExpression
+import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
+import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.environment.TypeEnv
 import com.developersam.primitivize.exceptions.UnexpectedTypeError
 
@@ -19,15 +19,15 @@ sealed class TopLevelMember {
     internal abstract fun typeCheck(env: TypeEnv): Pair<DecoratedTopLevelMember, TypeEnv>
 
     /**
-     * [Constant] represents a constant declaration of the form:
-     * `val` [identifier] `=` [expr],
+     * [Variable] represents a constant declaration of the form:
+     * `var` [identifier] `=` [expr],
      * with [identifier] at [identifierLineNo].
      *
      * @property identifierLineNo identifier line number of the constant.
      * @property identifier identifier of the constant.
      * @property expr expression of the constant.
      */
-    data class Constant(
+    data class Variable(
             val identifierLineNo: Int,
             val identifier: String,
             val expr: Expression
@@ -35,9 +35,13 @@ sealed class TopLevelMember {
 
         override fun typeCheck(env: TypeEnv): Pair<DecoratedTopLevelMember, TypeEnv> {
             val decoratedExpr = expr.typeCheck(environment = env)
-            val decoratedConstant = DecoratedTopLevelMember.Constant(
-                    identifier = identifier, expr = decoratedExpr,
-                    type = decoratedExpr.type
+            UnexpectedTypeError.check(
+                    lineNo = identifierLineNo,
+                    expectedType = ExprType.Int,
+                    actualType = decoratedExpr.type
+            )
+            val decoratedConstant = DecoratedTopLevelMember.Variable(
+                    identifier = identifier, expr = decoratedExpr
             )
             val e = env.put(key = identifier, value = decoratedExpr.type)
             return decoratedConstant to e
@@ -94,7 +98,7 @@ sealed class TopLevelMember {
         /**
          * [typeCheck] type checks all the members with current [env].
          */
-        fun List<TopLevelMember>.typeCheck(
+        fun <M : TopLevelMember> List<M>.typeCheck(
                 env: TypeEnv
         ): Pair<List<DecoratedTopLevelMember>, TypeEnv> {
             val typeCheckedMembers = ArrayList<DecoratedTopLevelMember>(size)

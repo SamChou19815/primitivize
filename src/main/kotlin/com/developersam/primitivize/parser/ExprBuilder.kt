@@ -4,11 +4,12 @@ import com.developersam.primitivize.antlr.PLBaseVisitor
 import com.developersam.primitivize.antlr.PLParser
 import com.developersam.primitivize.ast.common.BinaryOperator
 import com.developersam.primitivize.ast.common.Literal
+import com.developersam.primitivize.ast.raw.AssignExpr
 import com.developersam.primitivize.ast.raw.BinaryExpr
+import com.developersam.primitivize.ast.raw.ChainExpr
 import com.developersam.primitivize.ast.raw.Expression
 import com.developersam.primitivize.ast.raw.FunctionApplicationExpr
 import com.developersam.primitivize.ast.raw.IfElseExpr
-import com.developersam.primitivize.ast.raw.LetExpr
 import com.developersam.primitivize.ast.raw.LiteralExpr
 import com.developersam.primitivize.ast.raw.NotExpr
 import com.developersam.primitivize.ast.raw.VariableIdentifierExpr
@@ -114,11 +115,15 @@ internal object ExprBuilder : PLBaseVisitor<Expression>() {
         )
     }
 
-    override fun visitLetExpr(ctx: PLParser.LetExprContext): Expression =
-            LetExpr(
-                    lineNo = ctx.start.line,
-                    identifier = ctx.LowerIdentifier()?.text,
-                    e1 = ctx.expression(0).accept(this),
+    override fun visitAssignExpr(ctx: PLParser.AssignExprContext): Expression =
+            AssignExpr(
+                    lineNo = ctx.start.line, identifier = ctx.LowerIdentifier().text,
+                    expr = ctx.expression().accept(this)
+            )
+
+    override fun visitChainExpr(ctx: PLParser.ChainExprContext): Expression =
+            ChainExpr(
+                    lineNo = ctx.start.line, e1 = ctx.expression(0).accept(this),
                     e2 = ctx.expression(1).accept(this)
             )
 

@@ -5,7 +5,7 @@ import com.developersam.primitivize.antlr.PLParser
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import com.developersam.primitivize.ast.raw.RawProgram
-import com.developersam.primitivize.parser.TopLevelMemberBuilder
+import com.developersam.primitivize.parser.ProgramBuilder
 import java.io.ByteArrayInputStream
 
 /**
@@ -18,6 +18,5 @@ internal fun createRawProgramFromSource(code: String): RawProgram =
                 .let(block = ::PLLexer)
                 .let(block = ::CommonTokenStream)
                 .let(block = ::PLParser)
-                .program().topLevelDeclaration()
-                .map { it.accept(TopLevelMemberBuilder) }
-                .let(block = ::RawProgram)
+                .program()
+                .accept(ProgramBuilder)

@@ -275,19 +275,17 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     }
 
     /**
-     * [Let] with correct [type] represents the let expression of the form
-     * `let` [identifier] `=` [e1] `;` [e2]
-     * If [identifier] is `null`, it means it's a wildcard.
+     * [Assign] with correct [type] represents the let expression of the form
+     * [identifier] `=` [expr].
      *
      * @property identifier new identifier to name.
-     * @property e1 the expression for the identifier.
-     * @property e2 the expression after the let.
-     * @property type type of the let expression.
+     * @property expr the expression for the identifier.
      */
-    data class Let(
-            val identifier: String?, val e1: DecoratedExpression, val e2: DecoratedExpression,
-            override val type: ExprType
+    data class Assign(
+            val identifier: String, val expr: DecoratedExpression
     ) : DecoratedExpression(precedenceLevel = 12) {
+
+        override val type: ExprType = ExprType.Unit
 
         /**
          * @see CodeConvertible.acceptConversion
@@ -299,24 +297,50 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                Let(
-                        identifier = identifier,
-                        e1 = e1.replaceVariable(from, to),
-                        e2 = e2.replaceVariable(from, to),
-                        type = type
-                )
+                copy(expr = expr.replaceVariable(from, to))
+
+        /**
+         * @see DecoratedExpression.rename
+         */
+        override fun rename(service: VariableRenamingService): DecoratedExpression {
+            val oldName = identifier
+            val newName = service.nextVariableName
+            val newE = expr.replaceVariable(from = oldName, to = newName)
+                    .rename(service = service)
+            return copy(identifier = newName, expr = newE)
+        }
+
+    }
+
+    /**
+     * [Chain] represents the chaining expression with correct [type] of the form [e1] `;` [e2].
+     *
+     * @property e1 the first expression.
+     * @property e2 the second expression.
+     */
+    data class Chain(val e1: DecoratedExpression, val e2: DecoratedExpression) :
+            DecoratedExpression(precedenceLevel = 13) {
+
+        override val type: ExprType = ExprType.Unit
+
+        /**
+         * @see CodeConvertible.acceptConversion
+         */
+        override fun acceptConversion(converter: AstToCodeConverter) =
+                converter.convert(node = this)
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: String): DecoratedExpression =
+                Chain(e1 = e1.replaceVariable(from, to), e2 = e2.replaceVariable(from, to))
 
         /**
          * @see DecoratedExpression.rename
          */
         override fun rename(service: VariableRenamingService): DecoratedExpression =
-                if (identifier == null) this else {
-                    val oldName = identifier
-                    val newName = service.nextVariableName
-                    val newE2 = e2.replaceVariable(from = oldName, to = newName)
-                            .rename(service = service)
-                    copy(identifier = newName, e2 = newE2)
-                }
+                Chain(e1 = e1.rename(service = service), e2 = e2.rename(service = service))
+
     }
 
 }

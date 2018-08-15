@@ -6,14 +6,17 @@ import com.developersam.primitivize.lowering.VariableRenamingService
 import com.developersam.primitivize.runtime.RuntimeLibrary
 
 /**
- * [DecoratedProgram] node contains a set of members [members].
+ * [DecoratedProgram] node contains a set of members [variables] and [functions].
  * It contains decorated ASTs.
  *
- * @property members a list of class members.
+ * @property variables a list of top-level variables in a program.
+ * @property functions a list of top-level functions in a program.
  * @property providedRuntimeLibrary the provided library for execution at runtime.
  */
 data class DecoratedProgram(
-        val members: List<DecoratedTopLevelMember>, val providedRuntimeLibrary: RuntimeLibrary?
+        val variables: List<DecoratedTopLevelMember.Variable>,
+        val functions: List<DecoratedTopLevelMember.Function>,
+        val providedRuntimeLibrary: RuntimeLibrary?
 ) : CodeConvertible {
 
     /**
@@ -26,14 +29,16 @@ data class DecoratedProgram(
      * [rename] returns the program with variables renamed.
      */
     internal fun rename(): DecoratedProgram {
-        val newMembers = ArrayList<DecoratedTopLevelMember>(members)
+        val newMembers = ArrayList<DecoratedTopLevelMember>(variables.size + functions.size)
+        newMembers.addAll(elements = variables)
+        newMembers.addAll(elements = functions)
         val service = VariableRenamingService()
         val l = newMembers.size
         for (i in 0 until l) {
             val m = newMembers[i]
             val oldName = m.identifier
             val newMember = m.rename(service = service)
-            if (newMember is DecoratedTopLevelMember.Constant) {
+            if (newMember is DecoratedTopLevelMember.Variable) {
                 val newName = newMember.identifier
                 for (j in (i + 1) until l) {
                     newMembers[j] = newMembers[j].replaceVariable(from = oldName, to = newName)
@@ -41,7 +46,18 @@ data class DecoratedProgram(
             }
             newMembers[i] = newMember
         }
-        return copy(members = newMembers)
+        val newVariables = ArrayList<DecoratedTopLevelMember.Variable>(variables.size)
+        val newFunctions = ArrayList<DecoratedTopLevelMember.Function>(functions.size)
+        newMembers.forEach { member ->
+            when (member) {
+                is DecoratedTopLevelMember.Variable -> newVariables.add(element = member)
+                is DecoratedTopLevelMember.Function -> newFunctions.add(element = member)
+            }
+        }
+        return DecoratedProgram(
+                variables = newVariables, functions = newFunctions,
+                providedRuntimeLibrary = providedRuntimeLibrary
+        )
     }
 
 }

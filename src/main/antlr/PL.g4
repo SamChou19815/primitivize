@@ -2,11 +2,9 @@ grammar PL;
 
 import PLLexerPart;
 
-program : topLevelDeclaration+ EOF;
+program : variableDeclaration* functionDeclaration+ EOF;
 
-topLevelDeclaration : constantDeclaration | functionDeclaration;
-
-constantDeclaration: VAL LowerIdentifier ASSIGN expression;
+variableDeclaration: VAR LowerIdentifier ASSIGN expression;
 
 functionDeclaration : FUN LowerIdentifier argumentDeclarations typeAnnotation ASSIGN expression;
 
@@ -28,7 +26,8 @@ expression
     | expression OR expression # DisjunctionExpr
     | IF expression THEN expression ELSE expression # IfElseExpr
     | expression (emptyParen | (LPAREN expression (COMMA expression)* RPAREN)) # FunAppExpr
-    | VAL (LowerIdentifier | WILDCARD) ASSIGN expression SEMICOLON expression # LetExpr
+    | LowerIdentifier ASSIGN expression # AssignExpr
+    | expression SEMICOLON expression # ChainExpr
     ;
 
 // Operator collections
