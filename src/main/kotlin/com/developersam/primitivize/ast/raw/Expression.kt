@@ -19,7 +19,6 @@ import com.developersam.primitivize.ast.decorated.DecoratedExpression
 import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.environment.TypeEnv
 import com.developersam.primitivize.exceptions.IdentifierError
-import com.developersam.primitivize.exceptions.WrongNumberOfArgsError
 import com.developersam.primitivize.exceptions.UnexpectedTypeError
 
 /**
@@ -198,28 +197,28 @@ data class IfElseExpr(
 }
 
 /**
- * [FunctionApplicationExpr] is the function application expression, with [functionExpr] as the
- * function of the function at [lineNo].
+ * [FunctionApplicationExpr] is the function application expression, with [identifier] as the
+ * function at [lineNo].
  *
- * @property functionExpr the function expression to apply.
+ * @property identifier the function identifier to apply.
  */
 data class FunctionApplicationExpr(
-        override val lineNo: Int, val functionExpr: Expression
+        override val lineNo: Int, val identifier: String
 ) : Expression() {
 
     /**
      * @see Expression.typeCheck
      */
     override fun typeCheck(environment: TypeEnv): DecoratedExpression {
-        val decoratedFunctionExpr = functionExpr.typeCheck(environment = environment)
-        val functionTypeOpt = decoratedFunctionExpr.type
-        val functionType = functionTypeOpt as? ExprType.Function
-                ?: throw UnexpectedTypeError(
-                        lineNo = functionExpr.lineNo, expectedType = "<function>",
-                        actualType = functionTypeOpt
-                )
+        val functionTypeOpt = environment[identifier] ?: throw IdentifierError.UndefinedIdentifier(
+                lineNo = lineNo, badIdentifier = identifier
+        )
+        val functionType = functionTypeOpt as? ExprType.Function ?: throw UnexpectedTypeError(
+                lineNo = lineNo, expectedType = "<function>",
+                actualType = functionTypeOpt
+        )
         return DecoratedExpression.FunctionApplication(
-                functionExpr = decoratedFunctionExpr, type = functionType.returnType
+                identifier = identifier, type = functionType.returnType
         )
     }
 

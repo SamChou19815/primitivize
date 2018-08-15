@@ -1,10 +1,7 @@
 package com.developersam.primitivize.runtime
 
-import com.developersam.primitivize.ast.common.FunctionCategory
-import com.developersam.primitivize.ast.common.Literal
-import com.developersam.primitivize.ast.raw.TopLevelMember
-import com.developersam.primitivize.ast.raw.LiteralExpr
 import com.developersam.primitivize.ast.type.ExprType
+import com.developersam.primitivize.environment.TypeEnv
 import com.developersam.primitivize.exceptions.DisallowedRuntimeFunctionError
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -45,7 +42,7 @@ private fun Method.toFunType(): ExprType.Function {
  * (methods name, method function type).
  */
 private fun R.toAnnotatedFunctionSequence(): Sequence<Pair<String, ExprType>> =
-        this::class.java.methods.asSequence()
+        javaClass.methods.asSequence()
                 .filter { Modifier.isStatic(it.modifiers) }
                 .filter { it.getAnnotation(RuntimeFunction::class.java) != null }
                 .map { it.name to it.toFunType() }
@@ -58,31 +55,12 @@ internal fun R.toAnnotatedFunctions(): List<Pair<String, ExprType>> =
         toAnnotatedFunctionSequence().toList()
 
 /**
- * [toFunctionMember] converts a pair of function name and type info to a class function member
- * with the specified function category [c].
+ * [withInjectedRuntime] returns a new type environment that contains the function in the
+ * [providedRuntimeLibrary].
  */
-private fun Pair<String, ExprType>.toFunctionMember(c: FunctionCategory): TopLevelMember.Function {
-    val (name, type) = this
-    val functionType = type as ExprType.Function
-    return TopLevelMember.Function(
-            category = c, identifierLineNo = -1, identifier = name,
-            returnType = functionType.returnType,
-            body = LiteralExpr(lineNo = 0, literal = Literal.Int(value = 0)) // dummy expression
-    )
-}
-
-/**
- * [withInjectedRuntime] returns a copy of itself and with an optional [providedRuntimeLibrary]
- * injected to itself.
- */
-internal fun List<TopLevelMember>.withInjectedRuntime(
-        providedRuntimeLibrary: R?
-): List<TopLevelMember> {
+internal fun TypeEnv.withInjectedRuntime(providedRuntimeLibrary: R?): TypeEnv {
     val providedRTSeq = providedRuntimeLibrary
             ?.toAnnotatedFunctionSequence()
-            ?.map { it.toFunctionMember(c = FunctionCategory.PROVIDED) }
             ?: emptySequence()
-    val newFunctionMembers = providedRTSeq.toList()
-    val oldMembers = this
-    return ArrayList<TopLevelMember>(oldMembers).apply { addAll(elements = newFunctionMembers) }
+    return providedRTSeq.fold(initial = this) { e, (name, type) -> e.put(key = name, value = type) }
 }

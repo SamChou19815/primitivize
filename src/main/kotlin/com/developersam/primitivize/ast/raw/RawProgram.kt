@@ -2,11 +2,14 @@ package com.developersam.primitivize.ast.raw
 
 import com.developersam.primitivize.ast.decorated.DecoratedProgram
 import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
+import com.developersam.primitivize.ast.processed.ProcessedProgram
 import com.developersam.primitivize.ast.raw.TopLevelMember.Companion.typeCheck
+import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.environment.TypeEnv
 import com.developersam.primitivize.exceptions.CompileTimeError
 import com.developersam.primitivize.exceptions.IdentifierError
 import com.developersam.primitivize.runtime.RuntimeLibrary
+import com.developersam.primitivize.runtime.withInjectedRuntime
 
 /**
  * [RawProgram] represents the top-level not-type-checked program with a list of [variables] and
@@ -54,9 +57,9 @@ data class RawProgram(
      *
      * @return the decorated program after type check.
      */
-    internal fun typeCheck(providedRuntimeLibrary: RuntimeLibrary? = null): DecoratedProgram {
+    private fun typeCheck(providedRuntimeLibrary: RuntimeLibrary?): DecoratedProgram {
         noNameShadowingValidation()
-        var env: TypeEnv = TypeEnv.empty()
+        var env = TypeEnv.empty<String, ExprType>().withInjectedRuntime(providedRuntimeLibrary)
         val decoratedVar = ArrayList<DecoratedTopLevelMember.Variable>(variables.size)
         val decoratedFun = ArrayList<DecoratedTopLevelMember.Function>(functions.size)
         for (variable in variables) {
@@ -74,5 +77,12 @@ data class RawProgram(
                 providedRuntimeLibrary = providedRuntimeLibrary
         )
     }
+
+    /**
+     * [process] returns the fully processed program with the optionally given
+     * [providedRuntimeLibrary].
+     */
+    fun process(providedRuntimeLibrary: RuntimeLibrary? = null): ProcessedProgram =
+            typeCheck(providedRuntimeLibrary = providedRuntimeLibrary).process()
 
 }

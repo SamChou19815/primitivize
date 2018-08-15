@@ -2,7 +2,11 @@ grammar PL;
 
 import PLLexerPart;
 
-program : variableDeclaration* functionDeclaration+ EOF;
+program
+    : variableDeclaration*
+      functionDeclaration*
+      FUN MAIN LPAREN RPAREN COLON UNIT ASSIGN expression
+      EOF;
 
 variableDeclaration: VAR LowerIdentifier ASSIGN expression;
 
@@ -22,7 +26,7 @@ expression
     | expression AND expression # ConjunctionExpr
     | expression OR expression # DisjunctionExpr
     | IF expression THEN expression ELSE expression # IfElseExpr
-    | expression LPAREN RPAREN # FunAppExpr
+    | LowerIdentifier LPAREN RPAREN # FunAppExpr
     | LowerIdentifier ASSIGN expression # AssignExpr
     | expression SEMICOLON expression # ChainExpr
     ;

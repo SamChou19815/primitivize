@@ -12,9 +12,13 @@ import com.developersam.primitivize.lowering.VariableRenamingService
 sealed class DecoratedTopLevelMember : CodeConvertible {
 
     /**
-     * Identifier of the constant.
+     * Identifier of the member.
      */
     abstract val identifier: String
+    /**
+     * Expression/content of the member.
+     */
+    abstract val expr: DecoratedExpression
     /**
      * Type of the top-level member.
      */
@@ -38,7 +42,7 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
      * @property expr expression of the constant.
      */
     data class Variable(
-            override val identifier: String, val expr: DecoratedExpression
+            override val identifier: String, override val expr: DecoratedExpression
     ) : DecoratedTopLevelMember() {
 
         override val type: ExprType = ExprType.Int
@@ -62,25 +66,25 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
          * @see DecoratedTopLevelMember.rename
          */
         override fun rename(service: VariableRenamingService): DecoratedTopLevelMember =
-                copy(identifier = service.nextVariableName, expr = expr.rename(service = service))
+                copy(identifier = service.nextVariableName)
 
     }
 
     /**
      * [Function] represents a function declaration of the form:
-     * `fun` [identifier] () `:` [returnType] `=` [body].
+     * `fun` [identifier] () `:` [returnType] `=` [expr].
      * The function [category] defines its behavior during type checking, interpretation, and code
      * generation.
      * It has an additional [type] field.
      *
      * @property category category of the function.
      * @property returnType type of the return value.
-     * @property body body part of the function.
+     * @property expr expr part of the function.
      * @property type of the entire function.
      */
     data class Function(
             val category: FunctionCategory, override val identifier: String,
-            val returnType: ExprType, val body: DecoratedExpression
+            val returnType: ExprType, override val expr: DecoratedExpression
     ) : DecoratedTopLevelMember() {
 
         override val type: ExprType = ExprType.Function(returnType = returnType)
@@ -95,13 +99,12 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
          * @see DecoratedTopLevelMember.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedTopLevelMember =
-                copy(body = body.replaceVariable(from = from, to = to))
+                copy(expr = expr.replaceVariable(from = from, to = to))
 
         /**
          * @see DecoratedTopLevelMember.rename
          */
-        override fun rename(service: VariableRenamingService): DecoratedTopLevelMember =
-                copy(body = body.rename(service = service))
+        override fun rename(service: VariableRenamingService): DecoratedTopLevelMember = this
 
     }
 

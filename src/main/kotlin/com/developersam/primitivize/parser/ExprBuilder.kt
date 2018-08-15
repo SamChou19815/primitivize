@@ -105,7 +105,7 @@ internal object ExprBuilder : PLBaseVisitor<Expression>() {
 
     override fun visitFunAppExpr(ctx: PLParser.FunAppExprContext): Expression =
             FunctionApplicationExpr(
-                    lineNo = ctx.start.line, functionExpr = ctx.expression().accept(this)
+                    lineNo = ctx.start.line, identifier = ctx.LowerIdentifier().text
             )
 
     override fun visitAssignExpr(ctx: PLParser.AssignExprContext): Expression =

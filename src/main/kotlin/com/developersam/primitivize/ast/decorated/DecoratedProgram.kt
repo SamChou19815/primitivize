@@ -1,5 +1,6 @@
 package com.developersam.primitivize.ast.decorated
 
+import com.developersam.primitivize.ast.processed.ProcessedProgram
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
 import com.developersam.primitivize.lowering.VariableRenamingService
@@ -28,7 +29,7 @@ data class DecoratedProgram(
     /**
      * [rename] returns the program with variables renamed.
      */
-    internal fun rename(): DecoratedProgram {
+    private fun rename(): DecoratedProgram {
         val newMembers = ArrayList<DecoratedTopLevelMember>(variables.size + functions.size)
         newMembers.addAll(elements = variables)
         newMembers.addAll(elements = functions)
@@ -59,5 +60,24 @@ data class DecoratedProgram(
                 providedRuntimeLibrary = providedRuntimeLibrary
         )
     }
+
+    /**
+     * [inline] returns the whole program as an inlined expression.
+     */
+    private fun inline(): ProcessedProgram {
+        var exprAcc = functions[functions.size - 1].expr
+        for (i in (functions.size - 2) downTo 0) {
+            exprAcc = exprAcc.inlineFunction(f = functions[i])
+        }
+        return ProcessedProgram(
+                variables = variables, mainExpr = exprAcc,
+                providedRuntimeLibrary = providedRuntimeLibrary
+        )
+    }
+
+    /**
+     * [process] returns the fully processed program.
+     */
+    internal fun process(): ProcessedProgram = rename().inline()
 
 }

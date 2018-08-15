@@ -4,8 +4,10 @@ import com.developersam.primitivize.antlr.PLBaseVisitor
 import com.developersam.primitivize.antlr.PLParser.FunctionDeclarationContext
 import com.developersam.primitivize.antlr.PLParser.ProgramContext
 import com.developersam.primitivize.antlr.PLParser.VariableDeclarationContext
+import com.developersam.primitivize.ast.common.FunctionCategory
 import com.developersam.primitivize.ast.raw.RawProgram
 import com.developersam.primitivize.ast.raw.TopLevelMember
+import com.developersam.primitivize.ast.type.ExprType
 
 /**
  * [ProgramBuilder] builds a [RawProgram].
@@ -36,10 +38,16 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
     /**
      * Visit program.
      */
-    override fun visitProgram(ctx: ProgramContext): RawProgram =
-            RawProgram(
-                    variables = ctx.variableDeclaration().map { getVariableDeclaration(it) },
-                    functions = ctx.functionDeclaration().map { getFunctionDeclaration(it) }
-            )
+    override fun visitProgram(ctx: ProgramContext): RawProgram {
+        val variables = ctx.variableDeclaration().map { getVariableDeclaration(it) }
+        val functions = ArrayList<TopLevelMember.Function>()
+        functions.addAll(elements = ctx.functionDeclaration().map { getFunctionDeclaration(it) })
+        functions.add(element = TopLevelMember.Function(
+                category = FunctionCategory.USER_DEFINED, identifierLineNo = ctx.FUN().symbol.line,
+                identifier = "main", returnType = ExprType.Unit,
+                body = ctx.expression().accept(ExprBuilder)
+        ))
+        return RawProgram(variables = variables, functions = functions)
+    }
 
 }

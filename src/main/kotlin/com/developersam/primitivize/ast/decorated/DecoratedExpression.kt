@@ -4,7 +4,6 @@ import com.developersam.primitivize.ast.common.BinaryOperator
 import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
-import com.developersam.primitivize.lowering.VariableRenamingService
 import com.developersam.primitivize.ast.common.Literal as CommonLiteral
 
 /**
@@ -25,9 +24,9 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     internal abstract fun replaceVariable(from: String, to: String): DecoratedExpression
 
     /**
-     * [rename] returns a new expression with variable renamed with the help of [service].
+     * [inlineFunction] returns the expression with the given function [f] inlined.
      */
-    internal abstract fun rename(service: VariableRenamingService): DecoratedExpression
+    internal abstract fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression
 
     /**
      * [hasLowerPrecedence] returns whether this expression has lower precedence than [parent].
@@ -60,9 +59,9 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         override fun replaceVariable(from: String, to: String): DecoratedExpression = this
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression = this
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
 
     }
 
@@ -87,9 +86,9 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         override fun replaceVariable(from: String, to: String): DecoratedExpression = this
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression = this
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
 
     }
 
@@ -116,9 +115,9 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 if (variable == from) VariableIdentifier(variable = to, type = type) else this
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression = this
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
 
     }
 
@@ -146,10 +145,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 Not(expr = expr.replaceVariable(from, to))
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression =
-                Not(expr = expr.rename(service = service))
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+                Not(expr = expr.inlineFunction(f = f))
 
     }
 
@@ -182,13 +181,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 )
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression =
-                Binary(
-                        left = left.rename(service = service), op = op,
-                        right = right.rename(service = service), type = type
-                )
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+                copy(left = left.inlineFunction(f = f), right = right.inlineFunction(f = f))
 
     }
 
@@ -223,26 +219,25 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 )
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression =
-                IfElse(
-                        condition = condition.rename(service = service),
-                        e1 = e1.rename(service = service),
-                        e2 = e2.rename(service = service),
-                        type = type
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+                copy(
+                        condition = condition.inlineFunction(f = f),
+                        e1 = e1.inlineFunction(f = f),
+                        e2 = e2.inlineFunction(f = f)
                 )
 
     }
 
     /**
      * [FunctionApplication] with correct [type] is the function application expression,
-     * with [functionExpr] as the function expression.
+     * with [identifier] as the function expression.
      *
-     * @property functionExpr the function expression to apply.
+     * @property identifier the function identifier to apply.
      */
     data class FunctionApplication(
-            val functionExpr: DecoratedExpression, override val type: ExprType
+            val identifier: String, override val type: ExprType
     ) : DecoratedExpression(precedenceLevel = 9) {
 
         /**
@@ -255,17 +250,13 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                FunctionApplication(
-                        functionExpr = functionExpr.replaceVariable(from, to), type = type
-                )
+                if (identifier == from) copy(identifier = to) else this
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression =
-                FunctionApplication(
-                        functionExpr = functionExpr.rename(service = service), type = type
-                )
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+                f.expr
 
     }
 
@@ -295,15 +286,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 copy(expr = expr.replaceVariable(from, to))
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression {
-            val oldName = identifier
-            val newName = service.nextVariableName
-            val newE = expr.replaceVariable(from = oldName, to = newName)
-                    .rename(service = service)
-            return copy(identifier = newName, expr = newE)
-        }
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+                copy(expr = expr.inlineFunction(f = f))
 
     }
 
@@ -331,10 +317,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 Chain(e1 = e1.replaceVariable(from, to), e2 = e2.replaceVariable(from, to))
 
         /**
-         * @see DecoratedExpression.rename
+         * @see DecoratedExpression.inlineFunction
          */
-        override fun rename(service: VariableRenamingService): DecoratedExpression =
-                Chain(e1 = e1.rename(service = service), e2 = e2.rename(service = service))
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+                Chain(
+                        e1 = e1.inlineFunction(f = f), e2 = e2.inlineFunction(f = f)
+                )
 
     }
 

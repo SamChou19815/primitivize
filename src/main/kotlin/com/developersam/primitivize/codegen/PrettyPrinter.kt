@@ -57,7 +57,7 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
             append(node.returnType.toString()).append(" =")
         }.toString()
         q.addLine(line = header)
-        q.indentAndApply { node.body.acceptConversion(converter = this@PrettyPrinter) }
+        q.indentAndApply { node.expr.acceptConversion(converter = this@PrettyPrinter) }
         q.addEmptyLine()
     }
 
@@ -89,7 +89,7 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
     }
 
     override fun convert(node: DecoratedExpression.FunctionApplication) {
-        q.addLine(line = "${node.functionExpr.toOneLineCode(parent = node)}()")
+        q.addLine(line = "${node.identifier}()")
     }
 
     override fun convert(node: DecoratedExpression.Assign) {

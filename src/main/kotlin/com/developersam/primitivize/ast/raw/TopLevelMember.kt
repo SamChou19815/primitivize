@@ -60,7 +60,7 @@ sealed class TopLevelMember {
      * @property identifierLineNo the line number of the identifier for the function.
      * @property identifier the identifier for the function.
      * @property returnType type of the return value.
-     * @property body body part of the function.
+     * @property body expr part of the function.
      */
     data class Function(
             val category: FunctionCategory = FunctionCategory.USER_DEFINED,
@@ -83,7 +83,7 @@ sealed class TopLevelMember {
             }
             val decoratedFunction = DecoratedTopLevelMember.Function(
                     category = category, identifier = identifier, returnType = returnType,
-                    body = bodyExpr
+                    expr = bodyExpr
             )
             val e = env.put(key = identifier, value = decoratedFunction.type)
             return decoratedFunction to e
