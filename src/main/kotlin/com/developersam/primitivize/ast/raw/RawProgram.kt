@@ -79,10 +79,10 @@ data class RawProgram(
     }
 
     /**
-     * [process] returns the fully processed program with the optionally given
+     * [processWith] returns the fully processed program with the optionally given
      * [providedRuntimeLibrary].
      */
-    fun process(providedRuntimeLibrary: RuntimeLibrary? = null): ProcessedProgram =
+    internal fun processWith(providedRuntimeLibrary: RuntimeLibrary? = null): ProcessedProgram =
             typeCheck(providedRuntimeLibrary = providedRuntimeLibrary).process()
 
 }
