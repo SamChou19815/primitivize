@@ -1,8 +1,13 @@
 var a = 4
 var b = 2
+var veryLongVar = 23 * 3
 
 fun reassign(): unit = a = 5
 
-fun bar(): unit = b = 4
+fun constant(): int = 4 * 3 + 2
 
-fun main(): unit = reassign(); reassign(); bar()
+fun foo(): unit = veryLongVar = 3
+
+fun bar(): unit = b = constant()
+
+fun main(): unit = reassign(); foo(); bar(); fooBar()

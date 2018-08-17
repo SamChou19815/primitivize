@@ -124,7 +124,7 @@ data class BinaryExpr(
                 UnexpectedTypeError.check(
                         lineNo = right.lineNo, expectedType = ExprType.Int, actualType = rightType
                 )
-                ExprType.Bool
+                ExprType.Int
             }
             LT, LE, GT, GE -> {
                 // comparison type operator
@@ -260,10 +260,16 @@ data class ChainExpr(
     /**
      * @see Expression.typeCheck
      */
-    override fun typeCheck(environment: TypeEnv): DecoratedExpression =
-            DecoratedExpression.Chain(
-                    e1 = e1.typeCheck(environment = environment),
-                    e2 = e2.typeCheck(environment = environment)
-            )
+    override fun typeCheck(environment: TypeEnv): DecoratedExpression {
+        val decoratedE1 = e1.typeCheck(environment = environment)
+        UnexpectedTypeError.check(
+                lineNo = e1.lineNo, expectedType = ExprType.Unit, actualType = decoratedE1.type
+        )
+        val decoratedE2 = e2.typeCheck(environment = environment)
+        UnexpectedTypeError.check(
+                lineNo = e2.lineNo, expectedType = ExprType.Unit, actualType = decoratedE2.type
+        )
+        return DecoratedExpression.Chain(e1 = decoratedE1, e2 = decoratedE2)
+    }
 
 }

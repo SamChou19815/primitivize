@@ -256,7 +256,7 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.inlineFunction
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                f.expr
+                if (f.identifier == identifier) f.expr else this
 
     }
 
@@ -285,7 +285,7 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
                 copy(
                         identifier = if (identifier == from) to else identifier,
-                        expr = expr.replaceVariable(from, to)
+                        expr = expr.replaceVariable(from = from, to = to)
                 )
 
         /**

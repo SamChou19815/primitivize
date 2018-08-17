@@ -43,18 +43,14 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
         q.indentAndApply { node.expr.acceptConversion(converter = this@PrettyPrinter) }
     }
 
-    override fun convert(node: DecoratedExpression.Literal) {
-        q.addLine(line = node.literal.toString())
-    }
+    override fun convert(node: DecoratedExpression.Literal): Unit =
+            q.addLine(line = node.literal.toString())
 
-    override fun convert(node: DecoratedExpression.VariableIdentifier) {
-        q.addLine(line = node.variable)
-    }
+    override fun convert(node: DecoratedExpression.VariableIdentifier): Unit =
+            q.addLine(line = node.variable)
 
-    override fun convert(node: DecoratedExpression.Not) {
-        val exprCode = node.expr.toOneLineCode(parent = node)
-        q.addLine(line = "!$exprCode")
-    }
+    override fun convert(node: DecoratedExpression.Not): Unit =
+            q.addLine(line = "!${node.expr.toOneLineCode(parent = node)}")
 
     override fun convert(node: DecoratedExpression.Binary) {
         val leftCode = node.left.toOneLineCode(parent = node)
@@ -70,21 +66,14 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
         q.addLine(line = ")")
     }
 
-    override fun convert(node: DecoratedExpression.FunctionApplication) {
-        q.addLine(line = "${node.identifier}()")
-    }
+    override fun convert(node: DecoratedExpression.FunctionApplication): Unit =
+            q.addLine(line = "${node.identifier}()")
 
-    override fun convert(node: DecoratedExpression.Assign) {
-        val code = node.expr.toOneLineCode(parent = node)
-        val letLine = "${node.identifier} = $code"
-        q.addLine(line = letLine)
-    }
+    override fun convert(node: DecoratedExpression.Assign): Unit =
+            q.addLine(line = "${node.identifier} = ${node.expr.toOneLineCode(parent = node)}")
 
-    override fun convert(node: DecoratedExpression.Chain) {
-        val c1 = node.e1.toOneLineCode(parent = node)
-        val c2 = node.e2.toOneLineCode(parent = node)
-        q.addLine(line = "$c1; $c2")
-    }
+    override fun convert(node: DecoratedExpression.Chain): Unit =
+            q.addLine(line = "${node.e1.toOneLineCode(node)}; ${node.e2.toOneLineCode(node)}")
 
     companion object {
 
