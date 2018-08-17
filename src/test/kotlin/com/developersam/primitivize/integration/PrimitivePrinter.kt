@@ -1,28 +1,43 @@
 package com.developersam.primitivize.integration
 
 import com.developersam.primitivize.ast.decorated.DecoratedExpression
-import com.developersam.primitivize.ast.decorated.DecoratedProgram
 import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
 import com.developersam.primitivize.ast.processed.ProcessedProgram
 import com.developersam.primitivize.codegen.AstToCodeConverter
+import com.developersam.primitivize.codegen.CodeConvertible
 import com.developersam.primitivize.codegen.IdtQueue
 
 /**
  * [PrimitivePrinter] is an example printer that takes the AST and prints some elementary messages.
- *
- * @property program the processed program to print.
  */
-class PrimitivePrinter(private val program: ProcessedProgram) {
-
-    /**
-     * [q] is the only indentation queue used in this class.
-     */
-    private val q: IdtQueue = IdtQueue()
+class PrimitivePrinter private constructor() {
 
     /**
      * [Visitor] is used to visit the AST and populate [q].
      */
-    private inner class Visitor : AstToCodeConverter {
+    private class Visitor : AstToCodeConverter {
+
+        /**
+         * [q] is the only indentation queue used in this class.
+         */
+        val q: IdtQueue = IdtQueue()
+
+        /**
+         * [CodeConvertible.toOneLineCode] returns the one-liner form of the [CodeConvertible].
+         */
+        private fun CodeConvertible.toOneLineCode(): String =
+                Visitor().apply { acceptConversion(converter = this) }.q.toOneLineCode()
+
+        /**
+         * [DecoratedExpression.toOneLineCode] returns the one-liner form of [DecoratedExpression].
+         *
+         * This method is expression node specific. It will consider the precedence between this
+         * node [parent] to decide whether to add parenthesis.
+         */
+        private fun DecoratedExpression.toOneLineCode(parent: DecoratedExpression): String =
+                toOneLineCode().let { code ->
+                    if (hasLowerPrecedence(parent = parent)) "($code)" else code
+                }
 
         override fun convert(node: ProcessedProgram) {
             TODO("not implemented")
@@ -30,41 +45,53 @@ class PrimitivePrinter(private val program: ProcessedProgram) {
 
         override fun convert(node: DecoratedTopLevelMember.Variable) {
             val variableId = node.identifier.substring(startIndex = 4).toInt()
-            q.addLine(line = "mem[${variableId + 9}] = ")
+            q.addLine(line = "mem[${variableId + 9}] = ${node.expr.toOneLineCode()}")
         }
 
-        override fun convert(node: DecoratedExpression.Literal) {
-            q.addLine(line = node.literal.toString())
-        }
+        override fun convert(node: DecoratedExpression.Literal): Unit =
+                q.addLine(line = node.literal.toString())
 
         override fun convert(node: DecoratedExpression.VariableIdentifier) {
             val variableId = node.variable.substring(startIndex = 4).toInt()
             q.addLine(line = "mem[${variableId + 8}]")
         }
 
-        override fun convert(node: DecoratedExpression.Not) {
-            TODO("not implemented")
-        }
+        override fun convert(node: DecoratedExpression.Not): Unit =
+                q.addLine(line = "!${node.expr.toOneLineCode(parent = node)}")
 
         override fun convert(node: DecoratedExpression.Binary) {
-            TODO("not implemented")
+            val leftCode = node.left.toOneLineCode(parent = node)
+            val rightCode = node.right.toOneLineCode(parent = node)
+            q.addLine(line = "$leftCode ${node.op.symbol} $rightCode")
         }
 
         override fun convert(node: DecoratedExpression.IfElse) {
-            TODO("not implemented")
+            throw UnsupportedOperationException("Only top level if-else blocks are supported!")
         }
 
         override fun convert(node: DecoratedExpression.FunctionApplication) {
-            TODO("not implemented")
+            val functionId = "FooBar"
+            q.addLine(line = "$functionId()")
         }
 
         override fun convert(node: DecoratedExpression.Assign) {
-            TODO("not implemented")
+            val variableId = node.identifier.substring(startIndex = 4).toInt()
+            val exprCode = node.expr.toOneLineCode(parent = node)
+            q.addLine(line = "mem[${variableId + 9}] = $exprCode")
         }
 
-        override fun convert(node: DecoratedExpression.Chain) {
-            TODO("not implemented")
-        }
+        override fun convert(node: DecoratedExpression.Chain): Unit =
+                q.addLine(line = "${node.e1.toOneLineCode(node)}; ${node.e2.toOneLineCode(node)}")
+
+    }
+
+    companion object {
+
+        /**
+         * [toPrimitiveString] returns the [processedProgram] as a string of indented code.
+         */
+        fun toPrimitiveString(processedProgram: ProcessedProgram): String =
+                Visitor().apply { convert(node = processedProgram) }.q.toIndentedCode()
 
     }
 
