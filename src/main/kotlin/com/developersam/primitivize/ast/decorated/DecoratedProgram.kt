@@ -18,13 +18,7 @@ data class DecoratedProgram(
         val variables: List<DecoratedTopLevelMember.Variable>,
         val functions: List<DecoratedTopLevelMember.Function>,
         val providedRuntimeLibrary: RuntimeLibrary?
-) : CodeConvertible {
-
-    /**
-     * @see CodeConvertible.acceptConversion
-     */
-    override fun acceptConversion(converter: AstToCodeConverter): Unit =
-            converter.convert(node = this)
+) {
 
     /**
      * [rename] returns the program with variables renamed.

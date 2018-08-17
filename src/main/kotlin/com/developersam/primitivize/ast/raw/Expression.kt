@@ -238,9 +238,9 @@ data class AssignExpr(
      * @see Expression.typeCheck
      */
     override fun typeCheck(environment: TypeEnv): DecoratedExpression {
-        if (environment[identifier] != null) {
-            throw IdentifierError.ShadowedName(lineNo, identifier)
-        }
+        environment[identifier] ?: throw IdentifierError.UndefinedIdentifier(
+                lineNo = lineNo, badIdentifier = identifier
+        )
         val decoratedExpr = expr.typeCheck(environment = environment)
         return DecoratedExpression.Assign(identifier = identifier, expr = decoratedExpr)
     }

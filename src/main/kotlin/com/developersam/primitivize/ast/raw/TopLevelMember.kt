@@ -100,13 +100,12 @@ sealed class TopLevelMember {
                 env: TypeEnv
         ): Pair<List<DecoratedTopLevelMember>, TypeEnv> {
             val typeCheckedMembers = ArrayList<DecoratedTopLevelMember>(size)
-            var currentEnv = env
-            for (member in this) {
-                val (typeCheckedMember, newE) = member.typeCheck(env = currentEnv)
+            val newEnv = fold(initial = env) { e, member ->
+                val (typeCheckedMember, newE) = member.typeCheck(env = e)
                 typeCheckedMembers.add(element = typeCheckedMember)
-                currentEnv = newE
+                newE
             }
-            return typeCheckedMembers to currentEnv
+            return typeCheckedMembers to newEnv
         }
 
     }

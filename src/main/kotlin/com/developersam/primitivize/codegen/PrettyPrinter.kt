@@ -1,8 +1,8 @@
 package com.developersam.primitivize.codegen
 
 import com.developersam.primitivize.ast.decorated.DecoratedExpression
-import com.developersam.primitivize.ast.decorated.DecoratedProgram
 import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
+import com.developersam.primitivize.ast.processed.ProcessedProgram
 
 /**
  * [PrettyPrinter] is responsible for pretty printing a program node.
@@ -31,34 +31,16 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
                 if (hasLowerPrecedence(parent = parent)) "($code)" else code
             }
 
-    override fun convert(node: DecoratedProgram) {
-        node.variables.convert()
-        node.functions.convert()
+    override fun convert(node: ProcessedProgram) {
+        node.variables.forEach(action = ::convert)
+        q.addLine(line = "// Main Expression:")
+        node.mainExpr.acceptConversion(converter = this)
     }
-
-    /**
-     * [convert] converts a list of [DecoratedTopLevelMember] to code.
-     */
-    private fun List<DecoratedTopLevelMember>.convert(): Unit =
-            forEach { it.acceptConversion(converter = this@PrettyPrinter) }
 
     override fun convert(node: DecoratedTopLevelMember.Variable) {
         val header = StringBuilder().append("var ").append(node.identifier).append(" =").toString()
         q.addLine(line = header)
         q.indentAndApply { node.expr.acceptConversion(converter = this@PrettyPrinter) }
-        q.addEmptyLine()
-    }
-
-    override fun convert(node: DecoratedTopLevelMember.Function) {
-        val header = StringBuilder().apply {
-            append("fun ")
-            append(node.identifier)
-            append("(): ")
-            append(node.returnType.toString()).append(" =")
-        }.toString()
-        q.addLine(line = header)
-        q.indentAndApply { node.expr.acceptConversion(converter = this@PrettyPrinter) }
-        q.addEmptyLine()
     }
 
     override fun convert(node: DecoratedExpression.Literal) {
@@ -94,7 +76,7 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
 
     override fun convert(node: DecoratedExpression.Assign) {
         val code = node.expr.toOneLineCode(parent = node)
-        val letLine = "val ${node.identifier} = $code;"
+        val letLine = "${node.identifier} = $code"
         q.addLine(line = letLine)
     }
 

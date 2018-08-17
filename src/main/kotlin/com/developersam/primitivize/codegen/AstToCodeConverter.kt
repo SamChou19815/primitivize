@@ -3,6 +3,7 @@ package com.developersam.primitivize.codegen
 import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
 import com.developersam.primitivize.ast.decorated.DecoratedExpression
 import com.developersam.primitivize.ast.decorated.DecoratedProgram
+import com.developersam.primitivize.ast.processed.ProcessedProgram
 
 /**
  * [AstToCodeConverter] defines a set of methods that helps the conversion from AST to target code.
@@ -14,17 +15,12 @@ interface AstToCodeConverter {
     /**
      * [convert] converts the given [node] to target code by recording well-indented code info.
      */
-    fun convert(node: DecoratedProgram)
+    fun convert(node: ProcessedProgram)
 
     /**
      * [convert] converts the given [node] to target code by recording well-indented code info.
      */
     fun convert(node: DecoratedTopLevelMember.Variable)
-
-    /**
-     * [convert] converts the given [node] to target code by recording well-indented code info.
-     */
-    fun convert(node: DecoratedTopLevelMember.Function)
 
     /**
      * [convert] converts the given [node] to target code by recording well-indented code info.

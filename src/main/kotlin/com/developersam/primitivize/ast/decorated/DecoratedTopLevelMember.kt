@@ -9,7 +9,7 @@ import com.developersam.primitivize.lowering.VariableRenamingService
 /**
  * [DecoratedTopLevelMember] contains a set of top-level members with type decorations.
  */
-sealed class DecoratedTopLevelMember : CodeConvertible {
+sealed class DecoratedTopLevelMember {
 
     /**
      * Identifier of the member.
@@ -43,7 +43,7 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
      */
     data class Variable(
             override val identifier: String, override val expr: DecoratedExpression
-    ) : DecoratedTopLevelMember() {
+    ) : DecoratedTopLevelMember(), CodeConvertible {
 
         override val type: ExprType = ExprType.Int
 
@@ -88,12 +88,6 @@ sealed class DecoratedTopLevelMember : CodeConvertible {
     ) : DecoratedTopLevelMember() {
 
         override val type: ExprType = ExprType.Function(returnType = returnType)
-
-        /**
-         * @see CodeConvertible.acceptConversion
-         */
-        override fun acceptConversion(converter: AstToCodeConverter): Unit =
-                converter.convert(node = this)
 
         /**
          * @see DecoratedTopLevelMember.replaceVariable

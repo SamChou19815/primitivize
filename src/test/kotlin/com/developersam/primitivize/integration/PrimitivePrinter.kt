@@ -24,17 +24,13 @@ class PrimitivePrinter(private val program: ProcessedProgram) {
      */
     private inner class Visitor : AstToCodeConverter {
 
-        override fun convert(node: DecoratedProgram) {
-            throw UnsupportedOperationException()
+        override fun convert(node: ProcessedProgram) {
+            TODO("not implemented")
         }
 
         override fun convert(node: DecoratedTopLevelMember.Variable) {
             val variableId = node.identifier.substring(startIndex = 4).toInt()
             q.addLine(line = "mem[${variableId + 9}] = ")
-        }
-
-        override fun convert(node: DecoratedTopLevelMember.Function) {
-            throw UnsupportedOperationException()
         }
 
         override fun convert(node: DecoratedExpression.Literal) {

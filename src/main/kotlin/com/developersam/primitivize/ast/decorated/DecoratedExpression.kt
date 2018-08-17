@@ -283,7 +283,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                copy(expr = expr.replaceVariable(from, to))
+                copy(
+                        identifier = if (identifier == from) to else identifier,
+                        expr = expr.replaceVariable(from, to)
+                )
 
         /**
          * @see DecoratedExpression.inlineFunction

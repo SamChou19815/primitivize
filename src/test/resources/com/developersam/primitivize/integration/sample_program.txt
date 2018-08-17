@@ -1,0 +1,8 @@
+var a = 4
+var b = 2
+
+fun reassign(): unit = a = 5
+
+fun bar(): unit = b = 4
+
+fun main(): unit = reassign(); reassign(); bar()
