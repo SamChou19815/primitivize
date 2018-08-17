@@ -1,5 +1,6 @@
 package com.developersam.primitivize.integration
 
+import com.developersam.primitivize.ast.processed.ProcessedProgram
 import com.developersam.primitivize.codegen.PrettyPrinter
 import com.developersam.primitivize.primitivize
 import com.developersam.primitivize.runtime.RuntimeFunction
@@ -14,6 +15,14 @@ import java.io.InputStreamReader
  */
 class PrinterTest {
 
+    @Suppress(names = ["ReplaceSingleLineLet"])
+    private val ast: ProcessedProgram = javaClass.getResourceAsStream("sample_program.txt")
+            .let(block = ::InputStreamReader)
+            .let(block = ::BufferedReader)
+            .lineSequence()
+            .joinToString(separator = "\n")
+            .let { primitivize(code = it, providedRuntimeLibrary = SimpleRuntime) }
+
     /**
      * A very simple dummy runtime.
      */
@@ -26,17 +35,20 @@ class PrinterTest {
     }
 
     /**
-     * [printTest] prints the code.
+     * [prettyPrinterTest] prints the code.
      */
     @Test
-    fun printTest() {
-        val code = javaClass.getResourceAsStream("sample_program.txt")
-                .let(block = ::InputStreamReader)
-                .let(block = ::BufferedReader)
-                .lineSequence()
-                .joinToString(separator = "\n")
-        val ast = primitivize(code = code, providedRuntimeLibrary = SimpleRuntime)
+    fun prettyPrinterTest() {
         val compiled = PrettyPrinter.prettyPrint(node = ast)
+        println(compiled)
+    }
+
+    /**
+     * [prettyPrinterTest] prints the code.
+     */
+    @Test
+    fun primitivePrinterTest() {
+        val compiled = PrimitivePrinter.toPrimitiveString(processedProgram = ast)
         println(compiled)
     }
 
