@@ -5,28 +5,25 @@ import PLLexerPart;
 program
     : variableDeclaration*
       functionDeclaration*
-      FUN MAIN LPAREN RPAREN COLON UNIT ASSIGN expression
+      FUN MAIN LPAREN RPAREN COLON VOID ASSIGN expression
       EOF;
 
 variableDeclaration: VAR LowerIdentifier ASSIGN expression;
 
-functionDeclaration : FUN LowerIdentifier LPAREN RPAREN typeAnnotation ASSIGN expression;
-
-// Some parser type fragment
-typeAnnotation : COLON type;
+functionDeclaration : FUN LowerIdentifier LPAREN RPAREN COLON type ASSIGN expression;
 
 expression
     : LPAREN expression RPAREN # NestedExpr
     | literal # LiteralExpr
     | LowerIdentifier # IdentifierExpr
     | NOT expression # NotExpr
+    | LowerIdentifier (LPAREN RPAREN | LPAREN expression (COMMA expression)* RPAREN) # FunAppExpr
     | expression factorOperator expression # FactorExpr
     | expression termOperator expression # TermExpr
     | expression comparisonOperator expression # ComparisonExpr
     | expression AND expression # ConjunctionExpr
     | expression OR expression # DisjunctionExpr
     | IF expression THEN expression ELSE expression # IfElseExpr
-    | LowerIdentifier LPAREN RPAREN # FunAppExpr
     | LowerIdentifier ASSIGN expression # AssignExpr
     | expression SEMICOLON expression # ChainExpr
     ;
@@ -45,4 +42,4 @@ literal : IntegerLiteral | BooleanLiteral ;
 
 // Types
 
-type : INT | BOOL | ENUM | UNIT ;
+type : INT | BOOL | VOID ;

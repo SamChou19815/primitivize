@@ -20,6 +20,7 @@ import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.environment.TypeEnv
 import com.developersam.primitivize.exceptions.IdentifierError
 import com.developersam.primitivize.exceptions.UnexpectedTypeError
+import com.developersam.primitivize.exceptions.WrongNumberOfArgsError
 
 /**
  * [Expression] represents a set of supported expression.
@@ -90,6 +91,49 @@ data class NotExpr(override val lineNo: Int, val expr: Expression) : Expression(
                 lineNo = expr.lineNo, expectedType = ExprType.Bool, actualType = e.type
         )
         return DecoratedExpression.Not(expr = e)
+    }
+
+}
+
+/**
+ * [FunctionApplicationExpr] is the function application expression, with [identifier] as the
+ * function at [lineNo].
+ *
+ * @property identifier the function identifier to apply.
+ * @property arguments a list of arguments.
+ */
+data class FunctionApplicationExpr(
+        override val lineNo: Int, val identifier: String, val arguments: List<Expression>
+) : Expression() {
+
+    /**
+     * @see Expression.typeCheck
+     */
+    override fun typeCheck(environment: TypeEnv): DecoratedExpression {
+        val functionTypeOpt = environment[identifier] ?: throw IdentifierError.UndefinedIdentifier(
+                lineNo = lineNo, badIdentifier = identifier
+        )
+        val functionType = functionTypeOpt as? ExprType.Function ?: throw UnexpectedTypeError(
+                lineNo = lineNo, expectedType = "<function>",
+                actualType = functionTypeOpt
+        )
+        val argumentTypes = functionType.argumentTypes
+        val expectedLen = argumentTypes.size
+        val actualLen = arguments.size
+        if (expectedLen != actualLen) {
+            throw WrongNumberOfArgsError(
+                    lineNo = lineNo, expected = expectedLen, actual = actualLen
+            )
+        }
+        val decoratedArguments = argumentTypes.zip(arguments).map { (t, e) ->
+            val d = e.typeCheck(environment = environment)
+            UnexpectedTypeError.check(lineNo = e.lineNo, expectedType = t, actualType = d.type)
+            d
+        }
+        return DecoratedExpression.FunctionApplication(
+                identifier = identifier, arguments = decoratedArguments,
+                type = functionType.returnType
+        )
     }
 
 }
@@ -197,34 +241,6 @@ data class IfElseExpr(
 }
 
 /**
- * [FunctionApplicationExpr] is the function application expression, with [identifier] as the
- * function at [lineNo].
- *
- * @property identifier the function identifier to apply.
- */
-data class FunctionApplicationExpr(
-        override val lineNo: Int, val identifier: String
-) : Expression() {
-
-    /**
-     * @see Expression.typeCheck
-     */
-    override fun typeCheck(environment: TypeEnv): DecoratedExpression {
-        val functionTypeOpt = environment[identifier] ?: throw IdentifierError.UndefinedIdentifier(
-                lineNo = lineNo, badIdentifier = identifier
-        )
-        val functionType = functionTypeOpt as? ExprType.Function ?: throw UnexpectedTypeError(
-                lineNo = lineNo, expectedType = "<function>",
-                actualType = functionTypeOpt
-        )
-        return DecoratedExpression.FunctionApplication(
-                identifier = identifier, type = functionType.returnType
-        )
-    }
-
-}
-
-/**
  * [AssignExpr] represents the assign expression at [lineNo] of the form [identifier] `=` [expr].
  *
  * @property identifier new identifier to name.
@@ -238,10 +254,13 @@ data class AssignExpr(
      * @see Expression.typeCheck
      */
     override fun typeCheck(environment: TypeEnv): DecoratedExpression {
-        environment[identifier] ?: throw IdentifierError.UndefinedIdentifier(
+        val identifierType = environment[identifier] ?: throw IdentifierError.UndefinedIdentifier(
                 lineNo = lineNo, badIdentifier = identifier
         )
         val decoratedExpr = expr.typeCheck(environment = environment)
+        UnexpectedTypeError.check(
+                lineNo = lineNo, expectedType = identifierType, actualType = decoratedExpr.type
+        )
         return DecoratedExpression.Assign(identifier = identifier, expr = decoratedExpr)
     }
 
@@ -263,11 +282,11 @@ data class ChainExpr(
     override fun typeCheck(environment: TypeEnv): DecoratedExpression {
         val decoratedE1 = e1.typeCheck(environment = environment)
         UnexpectedTypeError.check(
-                lineNo = e1.lineNo, expectedType = ExprType.Unit, actualType = decoratedE1.type
+                lineNo = e1.lineNo, expectedType = ExprType.Void, actualType = decoratedE1.type
         )
         val decoratedE2 = e2.typeCheck(environment = environment)
         UnexpectedTypeError.check(
-                lineNo = e2.lineNo, expectedType = ExprType.Unit, actualType = decoratedE2.type
+                lineNo = e2.lineNo, expectedType = ExprType.Void, actualType = decoratedE2.type
         )
         return DecoratedExpression.Chain(e1 = decoratedE1, e2 = decoratedE2)
     }

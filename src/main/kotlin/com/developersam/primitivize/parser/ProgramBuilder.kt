@@ -31,7 +31,7 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
             TopLevelMember.Function(
                     identifierLineNo = ctx.LowerIdentifier().symbol.line,
                     identifier = ctx.LowerIdentifier().text,
-                    returnType = ctx.typeAnnotation().type().accept(TypeBuilder),
+                    returnType = ctx.type().accept(TypeBuilder),
                     body = ctx.expression().accept(ExprBuilder)
             )
 
@@ -44,7 +44,7 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
         functions.addAll(elements = ctx.functionDeclaration().map { getFunctionDeclaration(it) })
         functions.add(element = TopLevelMember.Function(
                 category = FunctionCategory.USER_DEFINED, identifierLineNo = ctx.FUN().symbol.line,
-                identifier = "main", returnType = ExprType.Unit,
+                identifier = "main", returnType = ExprType.Void,
                 body = ctx.expression().accept(ExprBuilder)
         ))
         return RawProgram(variables = variables, functions = functions)

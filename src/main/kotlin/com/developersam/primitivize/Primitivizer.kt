@@ -1,3 +1,5 @@
+@file:JvmName(name = "Primitivizer")
+
 package com.developersam.primitivize
 
 import com.developersam.primitivize.antlr.PLLexer

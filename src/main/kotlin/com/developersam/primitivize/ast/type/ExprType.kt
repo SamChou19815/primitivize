@@ -8,12 +8,12 @@ sealed class ExprType {
     /**
      * The unit/void type.
      */
-    object Unit : ExprType() {
+    object Void : ExprType() {
 
         /**
          * @see Any.toString
          */
-        override fun toString(): String = "unit"
+        override fun toString(): String = "void"
 
     }
 
@@ -44,28 +44,31 @@ sealed class ExprType {
     /**
      * The function type.
      *
+     * @property argumentTypes a list of argument types, which can be empty.
      * @property returnType the type of return value.
      */
-    data class Function(val returnType: ExprType) : ExprType() {
+    data class Function(val argumentTypes: List<ExprType>, val returnType: ExprType) : ExprType() {
 
         /**
          * @see Any.toString
          */
-        override fun toString(): String = "() -> $returnType"
+        override fun toString(): String =
+                "(${argumentTypes.joinToString(separator = ", ")}) -> $returnType"
 
         /**
          * @see Any.equals
          */
         override fun equals(other: Any?): Boolean = when {
             this === other -> true
-            other is Function -> returnType == other.returnType
+            other is Function -> argumentTypes == other.argumentTypes &&
+                    returnType == other.returnType
             else -> false
         }
 
         /**
          * @see Any.hashCode
          */
-        override fun hashCode(): kotlin.Int = returnType.hashCode()
+        override fun hashCode(): kotlin.Int = argumentTypes.hashCode() * 31 + returnType.hashCode()
 
     }
 

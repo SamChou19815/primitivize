@@ -14,7 +14,7 @@ import com.developersam.primitivize.runtime.RuntimeLibrary as R
  * If there is no such correspondence, `null` will be returned.
  */
 private fun Type.toAllowedTypeExpr(): ExprType? = when (typeName) {
-    "void" -> ExprType.Unit
+    "void" -> ExprType.Void
     "int" -> ExprType.Int
     "boolean" -> ExprType.Bool
     else -> null
@@ -29,12 +29,13 @@ private fun Method.toFunType(): ExprType.Function {
     if (typeParameters.isNotEmpty()) {
         throw DisallowedRuntimeFunctionError()
     }
-    if (genericParameterTypes.isNotEmpty()) {
+    val argumentTypes = parameterTypes.mapNotNull { it.toAllowedTypeExpr() }
+    if (argumentTypes.size != parameterTypes.size) {
         throw DisallowedRuntimeFunctionError()
     }
     val returnType = this.returnType.toAllowedTypeExpr()
             ?: throw DisallowedRuntimeFunctionError()
-    return ExprType.Function(returnType = returnType)
+    return ExprType.Function(argumentTypes = argumentTypes, returnType = returnType)
 }
 
 /**

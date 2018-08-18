@@ -4,6 +4,7 @@ import com.developersam.primitivize.ast.common.BinaryOperator
 import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
+import java.util.LinkedList
 import com.developersam.primitivize.ast.common.Literal as CommonLiteral
 
 /**
@@ -17,6 +18,25 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
      * [type] is the type decoration.
      */
     abstract val type: ExprType
+
+    /**
+     * [toMainIfElseBlock] returns the main expression as a chain of if else block.
+     */
+    fun toMainIfElseBlock(): List<IfElseBlockItem> {
+        val list = LinkedList<IfElseBlockItem>()
+        var expr = this
+        while (expr is DecoratedExpression.IfElse) {
+            val item =
+                    IfElseBlockItem(condition = expr.condition, action = expr.e1)
+            list.add(element = item)
+            expr = expr.e2
+        }
+        val item = IfElseBlockItem(
+                condition = DecoratedExpression.Literal(value = true), action = expr
+        )
+        list.add(element = item)
+        return list
+    }
 
     /**
      * [replaceVariable] replaces variables from [from] to [to] inside this expression.
@@ -75,6 +95,20 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     ) : DecoratedExpression(precedenceLevel = 0) {
 
         /**
+         * Construct by a single int [value].
+         */
+        constructor(value: Int) : this(
+                literal = CommonLiteral.Int(value = value), type = ExprType.Int
+        )
+
+        /**
+         * Construct by a single boolean [value].
+         */
+        constructor(value: Boolean) : this(
+                literal = CommonLiteral.Bool(value = value), type = ExprType.Bool
+        )
+
+        /**
          * @see CodeConvertible.acceptConversion
          */
         override fun acceptConversion(converter: AstToCodeConverter): Unit =
@@ -112,7 +146,7 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                if (variable == from) VariableIdentifier(variable = to, type = type) else this
+                if (variable == from) copy(variable = to) else this
 
         /**
          * @see DecoratedExpression.inlineFunction
@@ -153,6 +187,41 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     }
 
     /**
+     * [FunctionApplication] with correct [type] is the function application expression,
+     * with [identifier] as the function expression.
+     *
+     * @property identifier the function identifier to apply.
+     * @property arguments a list of arguments.
+     */
+    data class FunctionApplication(
+            val identifier: String, val arguments: List<DecoratedExpression>,
+            override val type: ExprType
+    ) : DecoratedExpression(precedenceLevel = 5) {
+
+        /**
+         * @see CodeConvertible.acceptConversion
+         */
+        override fun acceptConversion(converter: AstToCodeConverter): Unit =
+                converter.convert(node = this)
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: String): DecoratedExpression {
+            val newArguments = arguments.map { it.replaceVariable(from, to) }
+            val newIdentifier = if (identifier == from) to else identifier
+            return copy(identifier = newIdentifier, arguments = newArguments)
+        }
+
+        /**
+         * @see DecoratedExpression.inlineFunction
+         */
+        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+                if (f.identifier == identifier) f.expr else this
+
+    }
+
+    /**
      * [Binary] with correct [type] represents a binary expression with operator [op]
      * between [left] and [right].
      *
@@ -163,7 +232,7 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     data class Binary(
             val left: DecoratedExpression, val op: BinaryOperator, val right: DecoratedExpression,
             override val type: ExprType
-    ) : DecoratedExpression(precedenceLevel = 5) {
+    ) : DecoratedExpression(precedenceLevel = 6) {
 
         /**
          * @see CodeConvertible.acceptConversion
@@ -231,36 +300,6 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     }
 
     /**
-     * [FunctionApplication] with correct [type] is the function application expression,
-     * with [identifier] as the function expression.
-     *
-     * @property identifier the function identifier to apply.
-     */
-    data class FunctionApplication(
-            val identifier: String, override val type: ExprType
-    ) : DecoratedExpression(precedenceLevel = 9) {
-
-        /**
-         * @see CodeConvertible.acceptConversion
-         */
-        override fun acceptConversion(converter: AstToCodeConverter): Unit =
-                converter.convert(node = this)
-
-        /**
-         * @see DecoratedExpression.replaceVariable
-         */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                if (identifier == from) copy(identifier = to) else this
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                if (f.identifier == identifier) f.expr else this
-
-    }
-
-    /**
      * [Assign] with correct [type] represents the let expression of the form
      * [identifier] `=` [expr].
      *
@@ -269,9 +308,9 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
      */
     data class Assign(
             val identifier: String, val expr: DecoratedExpression
-    ) : DecoratedExpression(precedenceLevel = 12) {
+    ) : DecoratedExpression(precedenceLevel = 8) {
 
-        override val type: ExprType = ExprType.Unit
+        override val type: ExprType = ExprType.Void
 
         /**
          * @see CodeConvertible.acceptConversion
@@ -303,9 +342,9 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
      * @property e2 the second expression.
      */
     data class Chain(val e1: DecoratedExpression, val e2: DecoratedExpression) :
-            DecoratedExpression(precedenceLevel = 13) {
+            DecoratedExpression(precedenceLevel = 9) {
 
-        override val type: ExprType = ExprType.Unit
+        override val type: ExprType = ExprType.Void
 
         /**
          * @see CodeConvertible.acceptConversion

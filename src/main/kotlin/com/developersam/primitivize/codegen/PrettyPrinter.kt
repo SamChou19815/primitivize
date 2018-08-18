@@ -59,21 +59,37 @@ internal class PrettyPrinter private constructor() : AstToCodeConverter {
     }
 
     override fun convert(node: DecoratedExpression.IfElse) {
-        q.addLine(line = "if (${node.condition.toOneLineCode()}) then (")
-        q.indentAndApply { node.e1.acceptConversion(converter = this@PrettyPrinter) }
+        val items = node.toMainIfElseBlock()
+        val first = items[0]
+        q.addLine(line = "if ${first.condition.toOneLineCode(node)} then (")
+        q.indentAndApply { first.action.acceptConversion(converter = this@PrettyPrinter) }
+        val len = items.size
+        for (i in 1 until (len - 1)) {
+            val mid = items[i]
+            q.addLine(line = ") else if ${mid.condition.toOneLineCode(node)} then (")
+            q.indentAndApply { mid.action.acceptConversion(converter = this@PrettyPrinter) }
+        }
+        val last = items[len - 1]
         q.addLine(line = ") else (")
-        q.indentAndApply { node.e2.acceptConversion(converter = this@PrettyPrinter) }
+        q.indentAndApply { last.action.acceptConversion(converter = this@PrettyPrinter) }
         q.addLine(line = ")")
     }
 
-    override fun convert(node: DecoratedExpression.FunctionApplication): Unit =
-            q.addLine(line = "${node.identifier}()")
+    override fun convert(node: DecoratedExpression.FunctionApplication) {
+        val arguments = node.arguments.joinToString(separator = ",") { it.toOneLineCode() }
+        q.addLine(line = "${node.identifier}($arguments)")
+    }
 
     override fun convert(node: DecoratedExpression.Assign): Unit =
             q.addLine(line = "${node.identifier} = ${node.expr.toOneLineCode(parent = node)}")
 
-    override fun convert(node: DecoratedExpression.Chain): Unit =
-            q.addLine(line = "${node.e1.toOneLineCode(node)}; ${node.e2.toOneLineCode(node)}")
+    override fun convert(node: DecoratedExpression.Chain) {
+        node.apply {
+            e1.acceptConversion(converter = this@PrettyPrinter)
+            q.addLine(line = ";")
+            e2.acceptConversion(converter = this@PrettyPrinter)
+        }
+    }
 
     companion object {
 

@@ -11,7 +11,6 @@ lexer grammar PLLexerPart;
  */
 
 VAR : 'var';
-VAL : 'val';
 FUN : 'fun';
 
 IF : 'if';
@@ -20,10 +19,8 @@ ELSE : 'else';
 
 INT : 'int';
 BOOL : 'bool';
-ENUM : 'enum';
-UNIT : 'unit';
+VOID : 'void';
 
-WILDCARD : '_';
 MAIN : 'main';
 
 /*

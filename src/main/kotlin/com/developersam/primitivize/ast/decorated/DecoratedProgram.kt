@@ -1,10 +1,9 @@
 package com.developersam.primitivize.ast.decorated
 
 import com.developersam.primitivize.ast.processed.ProcessedProgram
-import com.developersam.primitivize.codegen.AstToCodeConverter
-import com.developersam.primitivize.codegen.CodeConvertible
 import com.developersam.primitivize.lowering.VariableRenamingService
 import com.developersam.primitivize.runtime.RuntimeLibrary
+import java.util.LinkedList
 
 /**
  * [DecoratedProgram] node contains a set of members [variables] and [functions].
@@ -24,11 +23,11 @@ data class DecoratedProgram(
      * [rename] returns the program with variables renamed.
      */
     private fun rename(): DecoratedProgram {
-        val newMembers = ArrayList<DecoratedTopLevelMember>(variables.size + functions.size)
+        val l = variables.size + functions.size
+        val newMembers = ArrayList<DecoratedTopLevelMember>(l)
         newMembers.addAll(elements = variables)
         newMembers.addAll(elements = functions)
         val service = VariableRenamingService()
-        val l = newMembers.size
         for (i in 0 until l) {
             val m = newMembers[i]
             val oldName = m.identifier
@@ -70,8 +69,30 @@ data class DecoratedProgram(
     }
 
     /**
+     * [normalizeVariableName] returns the program that removes the underscore to normalize
+     * variables.
+     */
+    private fun ProcessedProgram.normalizeVariableName(): ProcessedProgram {
+        val replacementList = LinkedList<Pair<String, String>>()
+        for (v in variables) {
+            val id = v.identifier
+            val newId = id.substring(1)
+            replacementList.add(element = id to newId)
+        }
+        val newVariables = variables.map { v ->
+            replacementList.fold(initial = v) { variable, (from, to) ->
+                variable.replaceVariable(from, to)
+            }
+        }
+        val newExpr = replacementList.fold(initial = mainExpr) { e, (from, to) ->
+            e.replaceVariable(from, to)
+        }
+        return copy(variables = newVariables, mainExpr = newExpr)
+    }
+
+    /**
      * [process] returns the fully processed program.
      */
-    internal fun process(): ProcessedProgram = rename().inline()
+    internal fun process(): ProcessedProgram = rename().inline().normalizeVariableName()
 
 }

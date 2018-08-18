@@ -56,7 +56,7 @@ sealed class DecoratedTopLevelMember {
         /**
          * @see DecoratedTopLevelMember.replaceVariable
          */
-        override fun replaceVariable(from: String, to: String): DecoratedTopLevelMember =
+        override fun replaceVariable(from: String, to: String): DecoratedTopLevelMember.Variable =
                 Variable(
                         identifier = if (identifier == from) to else identifier,
                         expr = expr.replaceVariable(from = from, to = to)
@@ -65,7 +65,7 @@ sealed class DecoratedTopLevelMember {
         /**
          * @see DecoratedTopLevelMember.rename
          */
-        override fun rename(service: VariableRenamingService): DecoratedTopLevelMember =
+        override fun rename(service: VariableRenamingService): DecoratedTopLevelMember.Variable =
                 copy(identifier = service.nextVariableName)
 
     }
@@ -87,18 +87,20 @@ sealed class DecoratedTopLevelMember {
             val returnType: ExprType, override val expr: DecoratedExpression
     ) : DecoratedTopLevelMember() {
 
-        override val type: ExprType = ExprType.Function(returnType = returnType)
+        override val type: ExprType =
+                ExprType.Function(argumentTypes = emptyList(), returnType = returnType)
 
         /**
          * @see DecoratedTopLevelMember.replaceVariable
          */
-        override fun replaceVariable(from: String, to: String): DecoratedTopLevelMember =
+        override fun replaceVariable(from: String, to: String): DecoratedTopLevelMember.Function =
                 copy(expr = expr.replaceVariable(from = from, to = to))
 
         /**
          * @see DecoratedTopLevelMember.rename
          */
-        override fun rename(service: VariableRenamingService): DecoratedTopLevelMember = this
+        override fun rename(service: VariableRenamingService): DecoratedTopLevelMember.Function =
+                this
 
     }
 

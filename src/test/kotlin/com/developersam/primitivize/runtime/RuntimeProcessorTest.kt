@@ -60,7 +60,7 @@ class RuntimeProcessorTest {
     @Test
     fun onePublicFunctionTest() {
         testCorrectness(lib = RuntimeLibraryWithOnePublicFunction, expectedOutput = listOf(
-                "ab" to ExprType.Function(ExprType.Unit)
+                "ab" to ExprType.Function(argumentTypes = emptyList(), returnType = ExprType.Void)
         ))
     }
 

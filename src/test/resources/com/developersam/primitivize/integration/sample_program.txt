@@ -1,13 +1,16 @@
-var a = 4
-var b = 2
 var veryLongVar = 23 * 3
+var isGoodRecorder = veryLongVar // 1 ==> good, else ==> bad
 
-fun reassign(): unit = a = 5
-
+fun reassign(): void = veryLongVar = 5
 fun constant(): int = 4 * 3 + 2
+fun foo(): void = veryLongVar = constant()
+fun isGood(): bool = isGoodRecorder == 1
 
-fun foo(): unit = veryLongVar = 3
-
-fun bar(): unit = b = constant()
-
-fun main(): unit = reassign(); foo(); bar(); fooBar()
+fun main(): void =
+  if isGood() then (
+    reassign();
+    isGoodRecorder = 1
+  ) else if smell() < energy() + nearby(3 + 2) then (
+    foo();
+    waitFor()
+  ) else forward()

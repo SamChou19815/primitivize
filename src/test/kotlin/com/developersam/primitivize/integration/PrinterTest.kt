@@ -3,53 +3,41 @@ package com.developersam.primitivize.integration
 import com.developersam.primitivize.ast.processed.ProcessedProgram
 import com.developersam.primitivize.codegen.PrettyPrinter
 import com.developersam.primitivize.primitivize
-import com.developersam.primitivize.runtime.RuntimeFunction
-import com.developersam.primitivize.runtime.RuntimeLibrary
 import org.junit.Test
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
 /**
- * [PrinterTest] tests the validity of the printer by simply printing out the compiled code in
+ * [PrinterTest] tests the validity of the printer by simply printing out the compiled ast in
  * pretty-printed format.
  */
 class PrinterTest {
 
+    /**
+     * The ast to print.
+     */
     @Suppress(names = ["ReplaceSingleLineLet"])
     private val ast: ProcessedProgram = javaClass.getResourceAsStream("sample_program.txt")
             .let(block = ::InputStreamReader)
             .let(block = ::BufferedReader)
             .lineSequence()
             .joinToString(separator = "\n")
-            .let { primitivize(code = it, providedRuntimeLibrary = SimpleRuntime) }
+            .let { primitivize(code = it, providedRuntimeLibrary = Runtime) }
 
     /**
-     * A very simple dummy runtime.
-     */
-    private object SimpleRuntime : RuntimeLibrary {
-
-        @RuntimeFunction
-        @JvmStatic
-        fun fooBar(): Unit = Unit
-
-    }
-
-    /**
-     * [prettyPrinterTest] prints the code.
+     * [prettyPrinterTest] prints the ast by [PrettyPrinter].
      */
     @Test
     fun prettyPrinterTest() {
-        val compiled = PrettyPrinter.prettyPrint(node = ast)
-        println(compiled)
+        println(PrettyPrinter.prettyPrint(ast))
     }
 
     /**
-     * [prettyPrinterTest] prints the code.
+     * [primitivePrinterTest] prints the ast by [PrimitivePrinter].
      */
     @Test
     fun primitivePrinterTest() {
-        val compiled = PrimitivePrinter.toPrimitiveString(processedProgram = ast)
-        println(compiled)
+        println(PrimitivePrinter.toPrimitiveString(ast))
     }
 
 }

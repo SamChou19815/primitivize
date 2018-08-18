@@ -1,5 +1,6 @@
 package com.developersam.primitivize.integration
 
+import com.developersam.primitivize.ast.common.BinaryOperator
 import com.developersam.primitivize.ast.common.Literal
 import com.developersam.primitivize.ast.decorated.DecoratedExpression
 import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
@@ -8,6 +9,8 @@ import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
 import com.developersam.primitivize.codegen.IdtQueue
+import com.developersam.primitivize.ast.decorated.IfElseBlockItem
+import java.util.LinkedList
 
 /**
  * [PrimitivePrinter] is an example printer that takes the AST and prints some elementary messages.
@@ -56,36 +59,35 @@ class PrimitivePrinter private constructor() {
                 }
 
         /**
-         * The if-else block item with a [condition] and [action].
+         * [String.toMem] returns the string variable in memory primitive format.
          */
-        private data class IfElseBlockItem(
-                val condition: DecoratedExpression,
-                val action: DecoratedExpression
-        )
+        private fun String.toMem(): String = "mem[${substring(startIndex = 3).toInt() + 9}]"
 
         /**
-         * Returns the main expression as a chain of if else block.
+         * [toFirstIfElseBlock] returns the first var assigning if-else block from a list of
+         * variable declarations.
          */
-        private fun DecoratedExpression.toMainIfElseBlock(): List<IfElseBlockItem> {
-            val list = arrayListOf<IfElseBlockItem>()
-            var expr = this
-            while (true) {
-                val e = expr
-                if (e is DecoratedExpression.IfElse) {
-                    val item = IfElseBlockItem(condition = e.condition, action = e.e1)
-                    list.add(element = item)
-                    expr = e.e2
-                } else {
-                    val item = IfElseBlockItem(
-                            condition = DecoratedExpression.Literal(
-                                    literal = Literal.Bool(value = true), type = ExprType.Bool)
-                            , action = expr
-                    )
-                    list.add(element = item)
-                    break
-                }
+        private fun List<DecoratedTopLevelMember.Variable>.toFirstIfElseBlock(): IfElseBlockItem {
+            val condition = DecoratedExpression.Binary(
+                    left = DecoratedExpression.VariableIdentifier(
+                            // -1 hack
+                            variable = "var-1", type = ExprType.Int
+                    ),
+                    op = BinaryOperator.EQ,
+                    right = DecoratedExpression.Literal(value = 0),
+                    type = ExprType.Bool
+            )
+            var action: DecoratedExpression = DecoratedExpression.Assign(
+                    identifier = "var-1",
+                    expr = DecoratedExpression.Literal(value = 1)
+            )
+            for (v in this) {
+                action = DecoratedExpression.Chain(
+                        e1 = action,
+                        e2 = DecoratedExpression.Assign(identifier = v.identifier, expr = v.expr)
+                )
             }
-            return list
+            return IfElseBlockItem(condition = condition, action = action)
         }
 
         /**
@@ -94,7 +96,10 @@ class PrimitivePrinter private constructor() {
         private fun convert(node: IfElseBlockItem) {
             val conditionCode = node.condition.toOneLineCode()
             q.addLine(line = "$conditionCode -->")
-            q.indentAndApply { node.action.acceptConversion(converter = this@Visitor) }
+            q.indentAndApply {
+                node.action.acceptConversion(converter = this@Visitor)
+                addLine(line = ";")
+            }
         }
 
         /*
@@ -104,14 +109,14 @@ class PrimitivePrinter private constructor() {
          */
 
         override fun convert(node: ProcessedProgram) {
-            // TODO process variables
-            node.mainExpr.toMainIfElseBlock().forEach(action = ::convert)
+            node.apply {
+                variables.toFirstIfElseBlock().let(block = ::convert)
+                mainExpr.toMainIfElseBlock().forEach(action = ::convert)
+            }
         }
 
-        override fun convert(node: DecoratedTopLevelMember.Variable) {
-            val variableId = node.identifier.substring(startIndex = 4).toInt()
-            q.addLine(line = "mem[${variableId + 9}] = ${node.expr.toOneLineCode()}")
-        }
+        override fun convert(node: DecoratedTopLevelMember.Variable): Unit =
+                q.addLine(line = "${node.identifier.toMem()} = ${node.expr.toOneLineCode()}")
 
         override fun convert(node: DecoratedExpression.Literal) {
             val literalString = when (node.literal) {
@@ -121,10 +126,8 @@ class PrimitivePrinter private constructor() {
             q.addLine(line = literalString)
         }
 
-        override fun convert(node: DecoratedExpression.VariableIdentifier) {
-            val variableId = node.variable.substring(startIndex = 4).toInt()
-            q.addLine(line = "mem[${variableId + 8}]")
-        }
+        override fun convert(node: DecoratedExpression.VariableIdentifier): Unit =
+                q.addLine(line = node.variable.toMem())
 
         override fun convert(node: DecoratedExpression.Not): Unit =
                 q.addLine(line = "!${node.expr.toOneLineCode(parent = node)}")
@@ -132,26 +135,41 @@ class PrimitivePrinter private constructor() {
         override fun convert(node: DecoratedExpression.Binary) {
             val leftCode = node.left.toOneLineCode(parent = node)
             val rightCode = node.right.toOneLineCode(parent = node)
-            q.addLine(line = "$leftCode ${node.op.symbol} $rightCode")
+            val opCode = when (node.op.symbol) {
+                "==" -> "="
+                "&&" -> "and"
+                "||" -> "or"
+                else -> node.op.symbol
+            }
+            q.addLine(line = "$leftCode $opCode $rightCode")
         }
 
-        override fun convert(node: DecoratedExpression.IfElse) {
-            throw UnsupportedOperationException("Only top level if-else blocks are supported!")
-        }
+        override fun convert(node: DecoratedExpression.IfElse): Unit =
+                throw UnsupportedOperationException("Only top level if-else blocks are supported!")
 
         override fun convert(node: DecoratedExpression.FunctionApplication) {
-            val functionString = "FooBar"
+            val identifierString = when (node.identifier) {
+                "waitFor" -> "wait" // Limitation of JVM
+                "memsize", "defense", "offense", "energy", "pass", "tag", "posture" ->
+                    node.identifier.toUpperCase()
+                else -> node.identifier
+            }
+            val argumentsString = node.arguments.takeIf { it.isNotEmpty() }?.joinToString(
+                    separator = ", ", prefix = "[", postfix = "]"
+            ) { it.toOneLineCode() } ?: ""
+            val functionString = identifierString + argumentsString
             q.addLine(line = functionString)
         }
 
-        override fun convert(node: DecoratedExpression.Assign) {
-            val variableId = node.identifier.substring(startIndex = 4).toInt()
-            val exprCode = node.expr.toOneLineCode(parent = node)
-            q.addLine(line = "mem[${variableId + 9}] = $exprCode")
-        }
+        override fun convert(node: DecoratedExpression.Assign): Unit =
+                q.addLine(line = "${node.identifier.toMem()} := ${node.expr.toOneLineCode(node)}")
 
-        override fun convert(node: DecoratedExpression.Chain): Unit =
-                q.addLine(line = "${node.e1.toOneLineCode(node)}; ${node.e2.toOneLineCode(node)}")
+        override fun convert(node: DecoratedExpression.Chain) {
+            node.apply {
+                e1.acceptConversion(converter = this@Visitor)
+                e2.acceptConversion(converter = this@Visitor)
+            }
+        }
 
     }
 
