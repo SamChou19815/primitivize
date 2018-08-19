@@ -51,10 +51,10 @@ to `int`.
 
 ### Function
 
-Syntax: `fun identifier(): RT = expr`.
+Syntax: `fun identifier(a1: T1, a2: T2, ...): RT = expr`.
 
-The function has type `() -> RT`. The `<expr>` must also have type `RT`. Note that you cannot define
-functions with arguments: the feature is only available in the injected runtime.
+The function has type `(T1, T2, ...) -> RT`. The `<expr>` must also have type `RT`. The mapping 
+`a1 -> T1, a2 -> T2, ...` will be added to the environment when type checking `expr`.
 
 ### Expressions
 

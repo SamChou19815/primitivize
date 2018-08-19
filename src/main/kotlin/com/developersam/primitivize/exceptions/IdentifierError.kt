@@ -20,10 +20,10 @@ sealed class IdentifierError(reason: String) : CompileTimeError(reason = reason)
             IdentifierError(reason = "Identifier $badIdentifier at line $lineNo is not found.")
 
     /**
-     * [UndefinedTypeIdentifier] reports that bad identifier is not found in the current
+     * [NotAssignableIdentifier] reports that bad identifier is not assignable in the current
      * environment.
      */
-    class UndefinedTypeIdentifier internal constructor(lineNo: Int, badIdentifier: String) :
-            CompileTimeError(reason = "Type $badIdentifier at line $lineNo is not found.")
+    class NotAssignableIdentifier internal constructor(badIdentifier: String) :
+            CompileTimeError(reason = "$badIdentifier is not assignable.")
 
 }

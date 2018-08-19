@@ -58,6 +58,7 @@ sealed class TopLevelMember {
      *
      * @property category category of the function.
      * @property identifierLineNo the line number of the identifier for the function.
+     * @property arguments a list of arguments.
      * @property identifier the identifier for the function.
      * @property returnType type of the return value.
      * @property body expr part of the function.
@@ -65,14 +66,18 @@ sealed class TopLevelMember {
     data class Function(
             val category: FunctionCategory = FunctionCategory.USER_DEFINED,
             val identifierLineNo: Int, val identifier: String,
-            val returnType: ExprType, val body: Expression
+            val arguments: List<Pair<String, ExprType>>, val returnType: ExprType,
+            val body: Expression
     ) : TopLevelMember() {
 
         override fun typeCheck(env: TypeEnv): Pair<DecoratedTopLevelMember, TypeEnv> {
+            val newEnv = arguments.fold(initial = env) { e, (name, type) ->
+                e.put(key = name, value = type)
+            }
             val bodyExpr: DecoratedExpression = when (category) {
                 FunctionCategory.PROVIDED -> DecoratedExpression.Dummy // Don't check given ones
                 FunctionCategory.USER_DEFINED -> {
-                    val e = body.typeCheck(environment = env)
+                    val e = body.typeCheck(environment = newEnv)
                     val bodyType = e.type
                     UnexpectedTypeError.check(
                             lineNo = identifierLineNo, expectedType = returnType,
@@ -82,10 +87,11 @@ sealed class TopLevelMember {
                 }
             }
             val decoratedFunction = DecoratedTopLevelMember.Function(
-                    category = category, identifier = identifier, returnType = returnType,
+                    category = category, identifier = identifier,
+                    arguments = arguments, returnType = returnType,
                     expr = bodyExpr
             )
-            val e = env.put(key = identifier, value = decoratedFunction.type)
+            val e = newEnv.put(key = identifier, value = decoratedFunction.type)
             return decoratedFunction to e
         }
 

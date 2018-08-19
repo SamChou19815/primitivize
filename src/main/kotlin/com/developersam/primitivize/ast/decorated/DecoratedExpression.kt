@@ -4,6 +4,7 @@ import com.developersam.primitivize.ast.common.BinaryOperator
 import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
+import com.developersam.primitivize.exceptions.IdentifierError
 import java.util.LinkedList
 import com.developersam.primitivize.ast.common.Literal as CommonLiteral
 
@@ -44,6 +45,13 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     internal abstract fun replaceVariable(from: String, to: String): DecoratedExpression
 
     /**
+     * [replaceVariable] replaces variables from [from] to [to] expression inside this expression.
+     */
+    protected abstract fun replaceVariable(
+            from: String, to: DecoratedExpression
+    ): DecoratedExpression
+
+    /**
      * [inlineFunction] returns the expression with the given function [f] inlined.
      */
     internal abstract fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression
@@ -76,7 +84,14 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         /**
          * @see DecoratedExpression.replaceVariable
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression = this
+        override fun replaceVariable(from: String, to: String): DecoratedExpression =
+                this
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
+                this
 
         /**
          * @see DecoratedExpression.inlineFunction
@@ -117,7 +132,14 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         /**
          * @see DecoratedExpression.replaceVariable
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression = this
+        override fun replaceVariable(from: String, to: String): DecoratedExpression =
+                this
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
+                this
 
         /**
          * @see DecoratedExpression.inlineFunction
@@ -149,6 +171,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 if (variable == from) copy(variable = to) else this
 
         /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
+                if (variable == from) to else this
+
+        /**
          * @see DecoratedExpression.inlineFunction
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
@@ -176,6 +204,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
+                Not(expr = expr.replaceVariable(from, to))
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
                 Not(expr = expr.replaceVariable(from, to))
 
         /**
@@ -214,10 +248,23 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         }
 
         /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression {
+            val newArguments = arguments.map { it.replaceVariable(from, to) }
+            return copy(arguments = newArguments)
+        }
+
+        /**
          * @see DecoratedExpression.inlineFunction
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                if (f.identifier == identifier) f.expr else this
+                if (f.identifier != identifier) this else {
+                    f.arguments.map { it.first }.zip(arguments)
+                            .fold(initial = f.expr) { expr, (from, to) ->
+                                expr.replaceVariable(from = from, to = to)
+                            }
+                }
 
     }
 
@@ -244,6 +291,15 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
+                Binary(
+                        left = left.replaceVariable(from, to), op = op,
+                        right = right.replaceVariable(from, to), type = type
+                )
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
                 Binary(
                         left = left.replaceVariable(from, to), op = op,
                         right = right.replaceVariable(from, to), type = type
@@ -280,6 +336,17 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
+                IfElse(
+                        condition = condition.replaceVariable(from, to),
+                        e1 = e1.replaceVariable(from, to),
+                        e2 = e2.replaceVariable(from, to),
+                        type = type
+                )
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
                 IfElse(
                         condition = condition.replaceVariable(from, to),
                         e1 = e1.replaceVariable(from, to),
@@ -328,6 +395,17 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 )
 
         /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
+                copy(
+                        identifier = if (identifier != from) identifier else {
+                            throw IdentifierError.NotAssignableIdentifier(badIdentifier = from)
+                        },
+                        expr = expr.replaceVariable(from = from, to = to)
+                )
+
+        /**
          * @see DecoratedExpression.inlineFunction
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
@@ -356,6 +434,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
+                Chain(e1 = e1.replaceVariable(from, to), e2 = e2.replaceVariable(from, to))
+
+        /**
+         * @see DecoratedExpression.replaceVariable
+         */
+        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
                 Chain(e1 = e1.replaceVariable(from, to), e2 = e2.replaceVariable(from, to))
 
         /**

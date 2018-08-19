@@ -10,7 +10,10 @@ program
 
 variableDeclaration: VAR LowerIdentifier ASSIGN expression;
 
-functionDeclaration : FUN LowerIdentifier LPAREN RPAREN COLON type ASSIGN expression;
+functionDeclaration :
+    FUN LowerIdentifier
+    (LPAREN RPAREN | LPAREN LowerIdentifier COLON type (COMMA LowerIdentifier COLON type)* RPAREN)
+    COLON type ASSIGN expression;
 
 expression
     : LPAREN expression RPAREN # NestedExpr

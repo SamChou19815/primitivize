@@ -78,17 +78,21 @@ sealed class DecoratedTopLevelMember {
      * It has an additional [type] field.
      *
      * @property category category of the function.
+     * @property arguments a list of arguments.
      * @property returnType type of the return value.
      * @property expr expr part of the function.
      * @property type of the entire function.
      */
     data class Function(
             val category: FunctionCategory, override val identifier: String,
-            val returnType: ExprType, override val expr: DecoratedExpression
+            val arguments: List<Pair<String, ExprType>>, val returnType: ExprType,
+            override val expr: DecoratedExpression
     ) : DecoratedTopLevelMember() {
 
-        override val type: ExprType =
-                ExprType.Function(argumentTypes = emptyList(), returnType = returnType)
+        override val type: ExprType = ExprType.Function(
+                argumentTypes = arguments.map { it.second },
+                returnType = returnType
+        )
 
         /**
          * @see DecoratedTopLevelMember.replaceVariable

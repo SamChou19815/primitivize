@@ -27,13 +27,23 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
     /**
      * Returns function declaration from parse tree.
      */
-    private fun getFunctionDeclaration(ctx: FunctionDeclarationContext): TopLevelMember.Function =
-            TopLevelMember.Function(
-                    identifierLineNo = ctx.LowerIdentifier().symbol.line,
-                    identifier = ctx.LowerIdentifier().text,
-                    returnType = ctx.type().accept(TypeBuilder),
-                    body = ctx.expression().accept(ExprBuilder)
-            )
+    private fun getFunctionDeclaration(ctx: FunctionDeclarationContext): TopLevelMember.Function {
+        val argsIdentifiers: List<String> = ctx
+                .LowerIdentifier()
+                .let { it.subList(fromIndex = 1, toIndex = it.size) }
+                .map { it.text }
+        val argsTypes: List<ExprType> = ctx.type()
+                .let { it.subList(fromIndex = 0, toIndex = it.size - 1) }
+                .map { it.accept(TypeBuilder) }
+        val args = argsIdentifiers.zip(argsTypes)
+        val returnType = ctx.type().let { it[it.size - 1] }.accept(TypeBuilder)
+        return TopLevelMember.Function(
+                identifierLineNo = ctx.start.line,
+                identifier = ctx.LowerIdentifier(0).text,
+                arguments = args, returnType = returnType,
+                body = ctx.expression().accept(ExprBuilder)
+        )
+    }
 
     /**
      * Visit program.
@@ -44,7 +54,7 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
         functions.addAll(elements = ctx.functionDeclaration().map { getFunctionDeclaration(it) })
         functions.add(element = TopLevelMember.Function(
                 category = FunctionCategory.USER_DEFINED, identifierLineNo = ctx.FUN().symbol.line,
-                identifier = "main", returnType = ExprType.Void,
+                identifier = "main", arguments = emptyList(), returnType = ExprType.Void,
                 body = ctx.expression().accept(ExprBuilder)
         ))
         return RawProgram(variables = variables, functions = functions)
