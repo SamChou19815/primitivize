@@ -51,7 +51,7 @@ fun main(args: Array<String>) {
 }
 ```
 
-The code mentioned above will be compiled to this equivalent code:
+The code mentioned above will be compiled to an AST that is equivalent to:
 
 ```
 var var0 =
