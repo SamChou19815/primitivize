@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
   fun main(): void = a = 2; b = 1
   """
   // replace it with your code.
-  val lib: RuntimeLibrary = null // Supply with your own library, or keep it null.
+  val lib: RuntimeLibrary? = null // Supply with your own library, or keep it null.
   val p: ProcessedProgram = Primitivizer.primitivize(code, lib)
   // You can further process this program.
   // The visitor pattern is implemented for you in AstToCodeConverter and CodeConvertible.
