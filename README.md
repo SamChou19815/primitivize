@@ -54,14 +54,10 @@ fun main(args: Array<String>) {
 The code mentioned above will be compiled to an AST that is equivalent to:
 
 ```
-var var0 =
-  1
-var var1 =
-  2
+var var0 = 1
+var var1 = 2
 // Main Expression:
-var0 = 2
-;
-var1 = 1
+var0 = 2; var1 = 1
 ```
 
 You can see that variables are renamed by numbers so you can easily process them to some lower-level
