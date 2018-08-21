@@ -1,11 +1,29 @@
 # Primitivize
 
+[![Build Status](https://travis-ci.com/SamChou19815/primitivize.svg?branch=master)](https://travis-ci.com/SamChou19815/primitivize)
+[![Release](https://jitpack.io/v/SamChou19815/primitivize.svg)](https://jitpack.io/#SamChou19815/primitivize)
+![GitHub](https://img.shields.io/github/license/SamChou19815/primitivize.svg)
+
 A programming language that can be easily lowered to a giant block of a single expression with some
 variable declarations. The lowered AST is designed to be easily transpiled to other low level
 programming languages.
 
 The language is NOT Turing complete, but it can be used to simulate one step of Turing machine
 state transition.
+
+## Gradle Config
+
+Add this to your `build.gradle` to use the artifact.
+
+```groovy
+repositories {
+    jcenter()
+    maven { url "https://jitpack.io" }
+}
+dependencies {
+    implementation 'com.github.SamChou19815:primitivize:+'
+}
+```
 
 ## Scope of this Project
 
