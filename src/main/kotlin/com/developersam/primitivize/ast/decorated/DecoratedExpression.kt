@@ -27,15 +27,31 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         val list = LinkedList<IfElseBlockItem>()
         var expr = this
         while (expr is DecoratedExpression.IfElse) {
-            val item =
-                    IfElseBlockItem(condition = expr.condition, action = expr.e1)
-            list.add(element = item)
+            val conditionExpr = expr.condition
+            val actionExpr = expr.e1
+            if (actionExpr is DecoratedExpression.IfElse) {
+                actionExpr.toMainIfElseBlock().map { nestedIfElseItem ->
+                    nestedIfElseItem.copy(condition = DecoratedExpression.Binary(
+                            left = conditionExpr,
+                            op = BinaryOperator.AND,
+                            right = nestedIfElseItem.condition,
+                            type = ExprType.Void
+                    ))
+                }.let(block = list::addAll)
+            } else {
+                list.add(element = IfElseBlockItem(condition = conditionExpr, action = actionExpr))
+            }
             expr = expr.e2
         }
-        val item = IfElseBlockItem(
-                condition = DecoratedExpression.Literal(value = true), action = expr
-        )
-        list.add(element = item)
+        val finalExpr = expr
+        if (finalExpr is DecoratedExpression.IfElse) {
+            list.addAll(elements = finalExpr.toMainIfElseBlock())
+        } else {
+            val item = IfElseBlockItem(
+                    condition = DecoratedExpression.Literal(value = true), action = finalExpr
+            )
+            list.add(element = item)
+        }
         return list
     }
 
