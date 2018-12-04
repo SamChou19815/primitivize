@@ -11,6 +11,22 @@ programming languages.
 The language is NOT Turing complete, but it can be used to simulate one step of Turing machine
 state transition.
 
+# Simple Usage
+
+If you don't want to do deep into the details, I also prepared some examples and CLI support.
+
+Currently, the CLI can compile this programming language into its lower level primitive and also
+compile this language into critterlang. For the second option, here is an example
+
+```bash
+./gradlew build # you first compile it with gradle
+java -jar build/libs/primitivize-0.1-all.jar -critter-compile <  src/test/resources/com/developersam/primitivize/integration/critter-program.txt
+# need more help? the following line will just print the help message.
+java -jar build/libs/primitivize-0.1-all.jar
+```
+
+You can see the grammar definition [here](./src/main/antlr/PL.g4).
+
 ## Gradle Config
 
 Add this to your `build.gradle` to use the artifact.
@@ -85,17 +101,3 @@ stuff.
 
 Read the [language spec](./LANGUAGE_SPEC.md) for the definition of the language features.
 *Currently, the language is not very precisely defined, but it mostly conforms to your intuition.*
-
-# Usage
-
-If you don't want to do deep into the details, I also prepared some examples and CLI support.
-
-Currently, the CLI can compile this programming language into its lower level primitive and also
-compile this language into critterlang. For the second option, here is an example
-
-```bash
-./gradlew build # you first compile it with gradle
-java -jar build/libs/primitivize-0.1-all.jar -critter-compile <  src/test/resources/com/developersam/primitivize/integration/critter-program.txt
-# need more help? the following line will just print the help message.
-java -jar build/libs/primitivize-0.1-all.jar
-```
