@@ -1,21 +1,20 @@
-package com.developersam.primitivize.integration
+package com.developersam.primitivize.examples.critterlang
 
 import com.developersam.primitivize.ast.common.BinaryOperator
 import com.developersam.primitivize.ast.common.Literal
 import com.developersam.primitivize.ast.decorated.DecoratedExpression
 import com.developersam.primitivize.ast.decorated.DecoratedTopLevelMember
+import com.developersam.primitivize.ast.decorated.IfElseBlockItem
 import com.developersam.primitivize.ast.processed.ProcessedProgram
 import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
 import com.developersam.primitivize.codegen.IdtQueue
-import com.developersam.primitivize.ast.decorated.IfElseBlockItem
-import java.util.LinkedList
 
 /**
- * [PrimitivePrinter] is an example printer that takes the AST and prints some elementary messages.
+ * [CritterCompiler] is an example printer that takes the AST and compiles it to critter programs.
  */
-class PrimitivePrinter private constructor() {
+class CritterCompiler private constructor() {
 
     /**
      * [Visitor] is used to visit the AST and populate [q].
@@ -120,7 +119,7 @@ class PrimitivePrinter private constructor() {
 
         override fun convert(node: DecoratedExpression.Literal) {
             val literalString = when (node.literal) {
-                is Literal.Bool -> if ((node.literal as Literal.Bool).value) "1 = 1" else "1 = 0"
+                is Literal.Bool -> if ((node.literal).value) "1 = 1" else "1 = 0"
                 else -> node.literal.toString()
             }
             q.addLine(line = literalString)

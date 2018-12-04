@@ -2,10 +2,11 @@ package com.developersam.primitivize.integration
 
 import com.developersam.primitivize.ast.processed.ProcessedProgram
 import com.developersam.primitivize.codegen.PrettyPrinter
+import com.developersam.primitivize.examples.critterlang.CritterCompiler
+import com.developersam.primitivize.examples.critterlang.CritterLangRuntime
 import com.developersam.primitivize.primitivize
+import com.developersam.primitivize.util.toCode
 import org.junit.Test
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 /**
  * [PrinterTest] tests the validity of the printer by simply printing out the compiled ast in
@@ -18,11 +19,8 @@ class PrinterTest {
      */
     @Suppress(names = ["ReplaceSingleLineLet"])
     private val ast: ProcessedProgram = javaClass.getResourceAsStream("sample_program.txt")
-            .let(block = ::InputStreamReader)
-            .let(block = ::BufferedReader)
-            .lineSequence()
-            .joinToString(separator = "\n")
-            .let { primitivize(code = it, providedRuntimeLibrary = Runtime) }
+            .toCode()
+            .let { primitivize(code = it, providedRuntimeLibrary = CritterLangRuntime) }
 
     /**
      * [prettyPrinterTest] prints the ast by [PrettyPrinter].
@@ -37,7 +35,7 @@ class PrinterTest {
      */
     @Test
     fun primitivePrinterTest() {
-        println(PrimitivePrinter.toPrimitiveString(ast))
+        println(CritterCompiler.toPrimitiveString(ast))
     }
 
 }

@@ -1,4 +1,4 @@
-package com.developersam.primitivize.integration
+package com.developersam.primitivize.examples.critterlang
 
 import com.developersam.primitivize.runtime.RuntimeFunction
 import com.developersam.primitivize.runtime.RuntimeLibrary
@@ -7,7 +7,7 @@ import com.developersam.primitivize.runtime.RuntimeLibrary
  * The simple runtime.
  */
 @Suppress(names = ["UNUSED_PARAMETER"])
-object Runtime : RuntimeLibrary {
+object CritterLangRuntime : RuntimeLibrary {
 
     @RuntimeFunction
     @JvmStatic

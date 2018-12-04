@@ -1,7 +1,9 @@
 plugins {
     id 'antlr'
+    id 'application'
     id 'org.jetbrains.kotlin.jvm' version '1.3.0'
     id 'org.jetbrains.dokka' version '0.9.17'
+    id 'com.github.johnrengelman.shadow' version '4.0.2'
 }
 
 group 'com.developersam'
@@ -53,5 +55,22 @@ dokka {
 test {
     testLogging {
         events "passed", "skipped", "failed", "standardOut", "standardError"
+    }
+}
+
+// Set the name of your main class here
+mainClassName = 'Main'
+
+shadowJar {
+    baseName = 'primitivize'
+    version = 0.1
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+    zip64 true
+    artifacts {
+        shadow(tasks.shadowJar.archivePath) {
+            builtBy shadowJar
+        }
     }
 }
