@@ -183,7 +183,6 @@ class CritterCompiler private constructor() {
          * [toPrimitiveString] returns the [processedProgram] as a string of indented code.
          */
         fun toPrimitiveString(processedProgram: ProcessedProgram): String {
-            println(PrettyPrinter.prettyPrint(processedProgram))
             return Visitor().apply { convert(node = processedProgram) }.q.toIndentedCode()
         }
 

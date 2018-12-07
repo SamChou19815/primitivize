@@ -65,6 +65,7 @@ data class DecoratedProgram(
         for (i in (functions.size - 2) downTo 0) {
             exprAcc = exprAcc.inlineFunction(f = functions[i])
         }
+        exprAcc = exprAcc.simplify()
         return ProcessedProgram(
                 variables = variables, mainExpr = exprAcc,
                 providedRuntimeLibrary = providedRuntimeLibrary

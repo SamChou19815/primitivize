@@ -28,8 +28,8 @@ class PrinterTest {
     @Test
     fun prettyPrinterTest() {
         println(PrettyPrinter.prettyPrint(getAst(resourceName = "sample_program.txt")))
-        println(PrettyPrinter.prettyPrint(getAst(resourceName = "critter-program.txt")))
-        println(PrettyPrinter.prettyPrint(getAst(resourceName = "recursive-program.txt")))
+        //println(PrettyPrinter.prettyPrint(getAst(resourceName = "critter-program.txt")))
+        //println(PrettyPrinter.prettyPrint(getAst(resourceName = "recursive-program.txt")))
     }
 
     /**
@@ -39,7 +39,7 @@ class PrinterTest {
     fun critterCompilerTest() {
         println(CritterCompiler.toPrimitiveString(getAst(resourceName = "sample_program.txt")))
         println(CritterCompiler.toPrimitiveString(getAst(resourceName = "critter-program.txt")))
-        // println(CritterCompiler.toPrimitiveString(getAst(resourceName = "recursive-program.txt")))
+        println(CritterCompiler.toPrimitiveString(getAst(resourceName = "recursive-program.txt")))
     }
 
 }

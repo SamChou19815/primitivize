@@ -20,7 +20,7 @@ compile this language into critterlang. For the second option, here is an exampl
 
 ```bash
 ./gradlew build # you first compile it with gradle
-java -jar build/libs/primitivize-0.1-all.jar -critter-compile <  src/test/resources/com/developersam/primitivize/integration/critter-program.txt
+java -jar build/libs/primitivize-0.1-all.jar -critter-compile < src/test/resources/com/developersam/primitivize/integration/critter-program.txt
 # need more help? the following line will just print the help message.
 java -jar build/libs/primitivize-0.1-all.jar
 ```
@@ -89,12 +89,12 @@ var var2 =
 var var3 =
   2
 // Main Expression:
-if var1 == 1 then (
-  var0 = 3 + 2
+if var1 == 1 && true then (
+  var0 = 5
   ;
-  var1 = 1 + (1 + (1 + (1 + 0)))
-) else if smell() < energy() + nearby(3 + 2) then (
-  var0 = 4 * 3 + 2
+  var1 = 4
+) else if smell() < energy() + nearby(3 + 2) && true then (
+  var0 = 14
   ;
   waitFor()
 ) else (
@@ -103,7 +103,8 @@ if var1 == 1 then (
 ```
 
 You can see that variables are renamed by numbers so you can easily process them to some lower-level
-stuff. Functions, except those defined in the runtime library, are all aggressively inlined. It also
+stuff. Some constants value computation are determined at compile time to optimize the programs.
+Functions, except those defined in the runtime library, are all aggressively inlined. It also
 has some primitive support for recursion.
 
 The function header `recursive(3, 0)` means that the compiler will expand the recursive call with
