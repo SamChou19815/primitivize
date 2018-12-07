@@ -105,7 +105,7 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         val list = ArrayList<IfElseBlockItem>(e1List.size + e2List.size)
         for ((itemCondition, action) in e1List) {
             list.add(IfElseBlockItem(
-                    condition = Binary.and(left = condition, right = itemCondition),
+                    condition = Binary.and(left = condition, right = itemCondition).simplify(),
                     action = action
             ))
         }
@@ -446,11 +446,31 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         override fun simplify(): DecoratedExpression {
             val simpleLeft = left.simplify()
             val simpleRight = right.simplify()
-            if (!(simpleLeft is Literal && simpleRight is Literal)) {
+            if (simpleLeft !is Literal && simpleRight !is Literal) {
                 return copy(left = simpleLeft, right = simpleRight)
+            } else if (simpleLeft is Literal) {
+                val leftVal = simpleLeft.literal
+                return if (leftVal is CommonLiteral.Bool) {
+                    val leftBool = leftVal.value
+                    if (op == AND) {
+                        if (leftBool) simpleRight else Literal.FALSE
+                    } else if (op == OR) {
+                        if (leftBool) Literal.TRUE else simpleRight
+                    } else error(message = "Corrupted AST!")
+                } else copy(left = simpleLeft, right = simpleRight)
+            } else if (simpleRight is Literal) {
+                val rightVal = simpleRight.literal
+                return if (rightVal is CommonLiteral.Bool) {
+                    val rightBool = rightVal.value
+                    if (op == AND) {
+                        if (rightBool) simpleLeft else Literal.FALSE
+                    } else if (op == OR) {
+                        if (rightBool) Literal.TRUE else simpleLeft
+                    } else error(message = "Corrupted AST!")
+                } else copy(left = simpleLeft, right = simpleRight)
             }
-            val leftVal = simpleLeft.literal
-            val rightVal = simpleRight.literal
+            val leftVal = (simpleLeft as Literal).literal
+            val rightVal = (simpleRight as Literal).literal
             return if (leftVal is CommonLiteral.Int && rightVal is CommonLiteral.Int) {
                 val leftInt = leftVal.value
                 val rightInt = rightVal.value
