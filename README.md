@@ -53,31 +53,33 @@ primitive AST and translate it into more primitive languages.
 
 ## Getting Started
 
-```java
-// Java
-public final class GettingStarted {
-    public static void main(String... args) {
-        String code = "var a = 1\nvar b = 2\nfun main(): void = a = 2; b = 1";
-        // replace it with your code.
-        RuntimeLibrary lib = null; // Supply with your own library, or keep it null.
-        ProcessedProgram p = Primitivizer.primitivize(code, lib);
-        // You can further process this program.
-        // The visitor pattern is implemented for you in AstToCodeConverter and CodeConvertible.
-        // The PrettyPrinter in package codegen is a good example to look at.
-    }
-}
-```
-
 ```kotlin
 // Kotlin
 fun main(args: Array<String>) {
   val code = """
+  var veryLongVar = 23 * 3
+  var isGoodRecorder = veryLongVar // 1 ==> good, else ==> bad
   var a = 1
   var b = 2
-  fun main(): void = a = 2; b = 1
+  
+  fun reassign(d: int): void = veryLongVar = d
+  fun constant(): int = 4 * 3 + 2
+  fun foo(): void = veryLongVar = constant()
+  fun isGood(): bool = isGoodRecorder == 1
+  
+  
+  fun main(): void =
+    if isGood() then (
+      reassign(3 + 2);
+      isGoodRecorder = 1
+    ) else if smell() < energy() + nearby(3 + 2) then (
+      foo();
+      waitFor();
+      b = add(a, b)
+    ) else forward()
   """
   // replace it with your code.
-  val lib: RuntimeLibrary? = null // Supply with your own library, or keep it null.
+  val lib: RuntimeLibrary? = CritterLangRuntime // Supply with your own library, or keep it null.
   val p: ProcessedProgram = Primitivizer.primitivize(code, lib)
   // You can further process this program.
   // The visitor pattern is implemented for you in AstToCodeConverter and CodeConvertible.
@@ -88,14 +90,30 @@ fun main(args: Array<String>) {
 The code mentioned above will be compiled to an AST that is equivalent to:
 
 ```
-var var0 = 1
-var var1 = 2
+var var0 =
+  23 * 3
+var var1 =
+  var0
+var var2 =
+  1
+var var3 =
+  2
 // Main Expression:
-var0 = 2; var1 = 1
+if var1 == 1 then (
+  var0 = 3 + 2
+  ;
+  var1 = 1
+) else if smell() < energy() + nearby(3 + 2) then (
+  var0 = 4 * 3 + 2
+  ;
+  waitFor()
+) else (
+  forward()
+)
 ```
 
 You can see that variables are renamed by numbers so you can easily process them to some lower-level
-stuff.
+stuff. Functions, except those defined in the runtime library, are all aggressively inlined.
 
 ## Documentations
 

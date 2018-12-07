@@ -59,6 +59,7 @@ data class DecoratedProgram(
      */
     private fun inline(): ProcessedProgram {
         var exprAcc = functions[functions.size - 1].expr
+        // Don't start from functions.size - 2 due to main function
         for (i in (functions.size - 2) downTo 0) {
             exprAcc = exprAcc.inlineFunction(f = functions[i])
         }
