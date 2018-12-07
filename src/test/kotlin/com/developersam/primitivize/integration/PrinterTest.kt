@@ -29,15 +29,17 @@ class PrinterTest {
     fun prettyPrinterTest() {
         println(PrettyPrinter.prettyPrint(getAst(resourceName = "sample_program.txt")))
         println(PrettyPrinter.prettyPrint(getAst(resourceName = "critter-program.txt")))
+        println(PrettyPrinter.prettyPrint(getAst(resourceName = "recursive-program.txt")))
     }
 
     /**
-     * [primitivePrinterTest] prints the ast by [CritterCompiler].
+     * [critterCompilerTest] prints the ast by [CritterCompiler].
      */
     @Test
-    fun primitivePrinterTest() {
+    fun critterCompilerTest() {
         println(CritterCompiler.toPrimitiveString(getAst(resourceName = "sample_program.txt")))
         println(CritterCompiler.toPrimitiveString(getAst(resourceName = "critter-program.txt")))
+        // println(CritterCompiler.toPrimitiveString(getAst(resourceName = "recursive-program.txt")))
     }
 
 }

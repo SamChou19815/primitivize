@@ -56,29 +56,36 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     }
 
     /**
+     * Return a decorated expression where each expression inside it is mapped by [f].
+     * This function is designed to reduce boilterplate.
+     */
+    protected abstract fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression
+
+    /**
      * [replaceVariable] replaces variables from [from] to [to] inside this expression.
      */
-    internal abstract fun replaceVariable(from: String, to: String): DecoratedExpression
+    internal open fun replaceVariable(from: String, to: String): DecoratedExpression =
+            map { it.replaceVariable(from, to) }
 
     /**
      * [replaceVariable] replaces variables from [from] to [to] expression inside this expression.
      */
-    protected abstract fun replaceVariable(
-            from: String, to: DecoratedExpression
-    ): DecoratedExpression
+    protected open fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
+            map { it.replaceVariable(from, to) }
 
     /**
      * [inlineFunction] returns an expression with the given function [f] inlined.
      */
-    internal abstract fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression
+    internal open fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
+            map { it.inlineFunction(f) }
 
     /**
      * [replaceFunctionApplicationWithExpr] returns an expression with a function application
      * of [f] replaced with [expr].
      */
-    internal abstract fun replaceFunctionApplicationWithExpr(
+    internal open fun replaceFunctionApplicationWithExpr(
             f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-    ): DecoratedExpression
+    ): DecoratedExpression = map { it.replaceFunctionApplicationWithExpr(f, expr) }
 
     /**
      * [hasLowerPrecedence] returns whether this expression has lower precedence than [parent].
@@ -106,28 +113,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         }
 
         /**
-         * @see DecoratedExpression.replaceVariable
+         * @see DecoratedExpression.map
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression =
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
                 this
-
-        /**
-         * @see DecoratedExpression.replaceVariable
-         */
-        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
-                this
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression = this
 
     }
 
@@ -161,28 +150,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
-         * @see DecoratedExpression.replaceVariable
+         * @see DecoratedExpression.map
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression =
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
                 this
-
-        /**
-         * @see DecoratedExpression.replaceVariable
-         */
-        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
-                this
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression = this
 
     }
 
@@ -203,6 +174,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
+         * @see DecoratedExpression.map
+         */
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
+                this
+
+        /**
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
@@ -213,18 +190,6 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
                 if (variable == from) to else this
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression = this
 
     }
 
@@ -246,30 +211,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
-         * @see DecoratedExpression.replaceVariable
+         * @see DecoratedExpression.map
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                Not(expr = expr.replaceVariable(from, to))
-
-        /**
-         * @see DecoratedExpression.replaceVariable
-         */
-        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
-                Not(expr = expr.replaceVariable(from, to))
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                Not(expr = expr.inlineFunction(f = f))
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression =
-                Not(expr = this.expr.replaceFunctionApplicationWithExpr(f = f, expr = expr))
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
+                Not(expr = f(expr))
 
     }
 
@@ -290,6 +235,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun acceptConversion(converter: AstToCodeConverter): Unit =
                 converter.convert(node = this)
+
+        /**
+         * @see DecoratedExpression.map
+         */
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
+                this
 
         /**
          * @see DecoratedExpression.replaceVariable
@@ -348,39 +299,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
-         * @see DecoratedExpression.replaceVariable
+         * @see DecoratedExpression.map
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                Binary(
-                        left = left.replaceVariable(from, to), op = op,
-                        right = right.replaceVariable(from, to), type = type
-                )
-
-        /**
-         * @see DecoratedExpression.replaceVariable
-         */
-        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
-                Binary(
-                        left = left.replaceVariable(from, to), op = op,
-                        right = right.replaceVariable(from, to), type = type
-                )
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                copy(left = left.inlineFunction(f = f), right = right.inlineFunction(f = f))
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression =
-                copy(
-                        left = left.replaceFunctionApplicationWithExpr(f = f, expr = expr),
-                        right = right.replaceFunctionApplicationWithExpr(f = f, expr = expr)
-                )
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
+                copy(left = f(left), right = f(right))
 
     }
 
@@ -404,50 +326,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
-         * @see DecoratedExpression.replaceVariable
+         * @see DecoratedExpression.map
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                IfElse(
-                        condition = condition.replaceVariable(from, to),
-                        e1 = e1.replaceVariable(from, to),
-                        e2 = e2.replaceVariable(from, to),
-                        type = type
-                )
-
-        /**
-         * @see DecoratedExpression.replaceVariable
-         */
-        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
-                IfElse(
-                        condition = condition.replaceVariable(from, to),
-                        e1 = e1.replaceVariable(from, to),
-                        e2 = e2.replaceVariable(from, to),
-                        type = type
-                )
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                copy(
-                        condition = condition.inlineFunction(f = f),
-                        e1 = e1.inlineFunction(f = f),
-                        e2 = e2.inlineFunction(f = f)
-                )
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression =
-                copy(
-                        condition = condition.replaceFunctionApplicationWithExpr(
-                                f = f, expr = expr
-                        ),
-                        e1 = e1.replaceFunctionApplicationWithExpr(f = f, expr = expr),
-                        e2 = e2.replaceFunctionApplicationWithExpr(f = f, expr = expr)
-                )
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
+                IfElse(condition = f(condition), e1 = f(e1), e2 = f(e2), type = type)
 
     }
 
@@ -471,6 +353,12 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
+         * @see DecoratedExpression.map
+         */
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
+                copy(expr = f(expr))
+
+        /**
          * @see DecoratedExpression.replaceVariable
          */
         override fun replaceVariable(from: String, to: String): DecoratedExpression =
@@ -489,22 +377,6 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                         },
                         expr = expr.replaceVariable(from = from, to = to)
                 )
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                copy(expr = expr.inlineFunction(f = f))
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression =
-                copy(expr = this.expr.replaceFunctionApplicationWithExpr(
-                        f = f, expr = expr
-                ))
 
     }
 
@@ -526,35 +398,10 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
-         * @see DecoratedExpression.replaceVariable
+         * @see DecoratedExpression.map
          */
-        override fun replaceVariable(from: String, to: String): DecoratedExpression =
-                Chain(e1 = e1.replaceVariable(from, to), e2 = e2.replaceVariable(from, to))
-
-        /**
-         * @see DecoratedExpression.replaceVariable
-         */
-        override fun replaceVariable(from: String, to: DecoratedExpression): DecoratedExpression =
-                Chain(e1 = e1.replaceVariable(from, to), e2 = e2.replaceVariable(from, to))
-
-        /**
-         * @see DecoratedExpression.inlineFunction
-         */
-        override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
-                Chain(
-                        e1 = e1.inlineFunction(f = f), e2 = e2.inlineFunction(f = f)
-                )
-
-        /**
-         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
-         */
-        override fun replaceFunctionApplicationWithExpr(
-                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
-        ): DecoratedExpression =
-                Chain(
-                        e1 = e1.replaceFunctionApplicationWithExpr(f = f, expr = expr),
-                        e2 = e2.replaceFunctionApplicationWithExpr(f = f, expr = expr)
-                )
+        override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
+                Chain(e1 = f(e1), e2 = f(e2))
 
     }
 
