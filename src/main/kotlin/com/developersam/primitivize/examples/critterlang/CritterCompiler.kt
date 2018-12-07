@@ -154,7 +154,7 @@ class CritterCompiler private constructor() {
         override fun convert(node: DecoratedExpression.FunctionApplication) {
             val identifierString = when (node.identifier) {
                 "waitFor" -> "wait" // Limitation of JVM
-                "memsize", "defense", "offense", "energy", "pass", "tag", "posture" ->
+                "memsize", "defense", "offense", "energy", "size", "pass", "tag", "posture" ->
                     node.identifier.toUpperCase()
                 else -> node.identifier
             }
