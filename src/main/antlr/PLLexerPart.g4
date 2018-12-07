@@ -13,6 +13,8 @@ lexer grammar PLLexerPart;
 VAR : 'var';
 FUN : 'fun';
 
+RECURSIVE : 'recursive';
+
 IF : 'if';
 THEN : 'then';
 ELSE : 'else';

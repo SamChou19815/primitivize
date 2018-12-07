@@ -27,7 +27,7 @@ defined above in scope.
 
 Name shadowing is bad and is not allowed.
 
-Recursion is NOT supported to allow for easy inlining.
+Only constant depth recursion is supported, so that we can always inline.
 
 ## Code Structure Specification
 
@@ -51,10 +51,11 @@ to `int`.
 
 ### Function
 
-Syntax: `fun identifier(a1: T1, a2: T2, ...): RT = expr`.
+Syntax: `[recursive(num, defaultExpr)]? fun identifier(a1: T1, a2: T2, ...): RT = expr`.
 
 The function has type `(T1, T2, ...) -> RT`. The `<expr>` must also have type `RT`. The mapping 
-`a1 -> T1, a2 -> T2, ...` will be added to the environment when type checking `expr`.
+`a1 -> T1, a2 -> T2, ...` will be added to the environment when type checking `expr`. If the
+header `[recursive(num, defaultExpr)]?` is specified, then `defaultExpr` must have type `RT`.
 
 ### Expressions
 

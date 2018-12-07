@@ -68,9 +68,17 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     ): DecoratedExpression
 
     /**
-     * [inlineFunction] returns the expression with the given function [f] inlined.
+     * [inlineFunction] returns an expression with the given function [f] inlined.
      */
     internal abstract fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression
+
+    /**
+     * [replaceFunctionApplicationWithExpr] returns an expression with a function application
+     * of [f] replaced with [expr].
+     */
+    internal abstract fun replaceFunctionApplicationWithExpr(
+            f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+    ): DecoratedExpression
 
     /**
      * [hasLowerPrecedence] returns whether this expression has lower precedence than [parent].
@@ -113,6 +121,13 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.inlineFunction
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
+
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression = this
 
     }
 
@@ -162,6 +177,13 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
 
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression = this
+
     }
 
     /**
@@ -196,6 +218,13 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          * @see DecoratedExpression.inlineFunction
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression = this
+
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression = this
 
     }
 
@@ -233,6 +262,14 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
                 Not(expr = expr.inlineFunction(f = f))
+
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression =
+                Not(expr = this.expr.replaceFunctionApplicationWithExpr(f = f, expr = expr))
 
     }
 
@@ -282,6 +319,13 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                             }
                 }
 
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression = if (f.identifier == identifier) expr else this
+
     }
 
     /**
@@ -326,6 +370,17 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
                 copy(left = left.inlineFunction(f = f), right = right.inlineFunction(f = f))
+
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression =
+                copy(
+                        left = left.replaceFunctionApplicationWithExpr(f = f, expr = expr),
+                        right = right.replaceFunctionApplicationWithExpr(f = f, expr = expr)
+                )
 
     }
 
@@ -380,6 +435,20 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                         e2 = e2.inlineFunction(f = f)
                 )
 
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression =
+                copy(
+                        condition = condition.replaceFunctionApplicationWithExpr(
+                                f = f, expr = expr
+                        ),
+                        e1 = e1.replaceFunctionApplicationWithExpr(f = f, expr = expr),
+                        e2 = e2.replaceFunctionApplicationWithExpr(f = f, expr = expr)
+                )
+
     }
 
     /**
@@ -427,6 +496,16 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
                 copy(expr = expr.inlineFunction(f = f))
 
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression =
+                copy(expr = this.expr.replaceFunctionApplicationWithExpr(
+                        f = f, expr = expr
+                ))
+
     }
 
     /**
@@ -464,6 +543,17 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
         override fun inlineFunction(f: DecoratedTopLevelMember.Function): DecoratedExpression =
                 Chain(
                         e1 = e1.inlineFunction(f = f), e2 = e2.inlineFunction(f = f)
+                )
+
+        /**
+         * @see DecoratedExpression.replaceFunctionApplicationWithExpr
+         */
+        override fun replaceFunctionApplicationWithExpr(
+                f: DecoratedTopLevelMember.Function, expr: DecoratedExpression
+        ): DecoratedExpression =
+                Chain(
+                        e1 = e1.replaceFunctionApplicationWithExpr(f = f, expr = expr),
+                        e2 = e2.replaceFunctionApplicationWithExpr(f = f, expr = expr)
                 )
 
     }

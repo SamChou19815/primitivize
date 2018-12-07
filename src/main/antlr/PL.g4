@@ -11,9 +11,11 @@ program
 variableDeclaration: VAR LowerIdentifier ASSIGN expression;
 
 functionDeclaration :
-    FUN LowerIdentifier
+    recursiveFunctionHeader? FUN LowerIdentifier
     (LPAREN RPAREN | LPAREN LowerIdentifier COLON type (COMMA LowerIdentifier COLON type)* RPAREN)
     COLON type ASSIGN expression;
+
+recursiveFunctionHeader : RECURSIVE LPAREN IntegerLiteral COMMA expression RPAREN;
 
 expression
     : LPAREN expression RPAREN # NestedExpr

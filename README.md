@@ -41,16 +41,6 @@ dependencies {
 }
 ```
 
-## Scope of this Project
-
-This project aims to implement a type-checker and compiler/transpiler for this simple language.
-
-The type-checker will be invoked before compilation to reject all ill-formed code before running.
-
-The compiler will compile the source code of this language to an AST that is already lowered to
-a set of variable declarations and a single unit expression. The user of this library can take the
-primitive AST and translate it into more primitive languages.
-
 ## Getting Started
 
 ```kotlin
@@ -67,15 +57,15 @@ fun main(args: Array<String>) {
   fun foo(): void = veryLongVar = constant()
   fun isGood(): bool = isGoodRecorder == 1
   
+  recursive(3, 0) fun testRecursion(): int = 1 + testRecursion()
   
   fun main(): void =
     if isGood() then (
       reassign(3 + 2);
-      isGoodRecorder = 1
+      isGoodRecorder = testRecursion()
     ) else if smell() < energy() + nearby(3 + 2) then (
       foo();
-      waitFor();
-      b = add(a, b)
+      waitFor()
     ) else forward()
   """
   // replace it with your code.
@@ -102,7 +92,7 @@ var var3 =
 if var1 == 1 then (
   var0 = 3 + 2
   ;
-  var1 = 1
+  var1 = 1 + (1 + (1 + (1 + 0)))
 ) else if smell() < energy() + nearby(3 + 2) then (
   var0 = 4 * 3 + 2
   ;
@@ -113,7 +103,25 @@ if var1 == 1 then (
 ```
 
 You can see that variables are renamed by numbers so you can easily process them to some lower-level
-stuff. Functions, except those defined in the runtime library, are all aggressively inlined.
+stuff. Functions, except those defined in the runtime library, are all aggressively inlined. It also
+has some primitive support for recursion.
+
+The function header `recursive(3, 0)` means that the compiler will expand the recursive call with
+depth at most 3, after that it will use the default value 0. Note that full recursion support is
+not possible without change the scope of the project.
+
+## Scope of this Project
+
+This project aims to implement a type-checker and compiler/transpiler for this simple language. The
+language is intentionally designed not to be Turing complete but to mimic as much features of Turing
+complete languages as possible. The reason is that we want the compilation target to be a non-Turing
+complete language.
+
+The type-checker will be invoked before compilation to reject all ill-formed code before running.
+
+The compiler will compile the source code of this language to an AST that is already lowered to
+a set of variable declarations and a single unit expression. The user of this library can take the
+primitive AST and translate it into more primitive languages.
 
 ## Documentations
 

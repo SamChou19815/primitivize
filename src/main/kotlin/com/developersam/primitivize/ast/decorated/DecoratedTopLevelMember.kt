@@ -72,21 +72,24 @@ sealed class DecoratedTopLevelMember {
 
     /**
      * [Function] represents a function declaration of the form:
-     * `fun` [identifier] () `:` [returnType] `=` [expr].
+     * [recursiveHeader]? `fun` [identifier] () `:` [returnType] `=` [expr].
      * The function [category] defines its behavior during type checking, interpretation, and code
      * generation.
      * It has an additional [type] field.
      *
      * @property category category of the function.
+     * @property recursiveHeader the recursive header of the form (depth, default value)
+     * @property identifier the identifier for the function.
      * @property arguments a list of arguments.
      * @property returnType type of the return value.
      * @property expr expr part of the function.
      * @property type of the entire function.
      */
     data class Function(
-            val category: FunctionCategory, override val identifier: String,
-            val arguments: List<Pair<String, ExprType>>, val returnType: ExprType,
-            override val expr: DecoratedExpression
+            val category: FunctionCategory,
+            val recursiveHeader: Pair<Int, DecoratedExpression>?,
+            override val identifier: String, val arguments: List<Pair<String, ExprType>>,
+            val returnType: ExprType, override val expr: DecoratedExpression
     ) : DecoratedTopLevelMember() {
 
         override val type: ExprType = ExprType.Function(
@@ -105,6 +108,25 @@ sealed class DecoratedTopLevelMember {
          */
         override fun rename(service: VariableRenamingService): DecoratedTopLevelMember.Function =
                 this
+
+        /**
+         * Inline and expand itself when it's a recursive function, or just return itself if it's
+         * not.
+         */
+        fun selfInline(): DecoratedTopLevelMember.Function {
+            if (recursiveHeader == null) {
+                return this
+            }
+            val (depth, defaultExpr) = recursiveHeader
+            var currentExpr = expr
+            repeat(times = depth) {
+                currentExpr = currentExpr.inlineFunction(f=this)
+            }
+            currentExpr = currentExpr.replaceFunctionApplicationWithExpr(
+                    f = this, expr = defaultExpr
+            )
+            return copy(recursiveHeader = null, expr = currentExpr)
+        }
 
     }
 

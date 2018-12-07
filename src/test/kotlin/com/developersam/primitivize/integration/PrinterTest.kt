@@ -15,27 +15,29 @@ import org.junit.Test
 class PrinterTest {
 
     /**
-     * The ast to print.
+     * Returns an AST given a [resourceName] that contains the source.
      */
-    @Suppress(names = ["ReplaceSingleLineLet"])
-    private val ast: ProcessedProgram = javaClass.getResourceAsStream("sample_program.txt")
-            .toCode()
-            .let { primitivize(code = it, providedRuntimeLibrary = CritterLangRuntime) }
+    private fun getAst(resourceName: String): ProcessedProgram =
+            javaClass.getResourceAsStream(resourceName)
+                    .toCode()
+                    .let { primitivize(code = it, providedRuntimeLibrary = CritterLangRuntime) }
 
     /**
      * [prettyPrinterTest] prints the ast by [PrettyPrinter].
      */
     @Test
     fun prettyPrinterTest() {
-        println(PrettyPrinter.prettyPrint(ast))
+        println(PrettyPrinter.prettyPrint(getAst(resourceName = "sample_program.txt")))
+        println(PrettyPrinter.prettyPrint(getAst(resourceName = "critter-program.txt")))
     }
 
     /**
-     * [primitivePrinterTest] prints the ast by [PrimitivePrinter].
+     * [primitivePrinterTest] prints the ast by [CritterCompiler].
      */
     @Test
     fun primitivePrinterTest() {
-        println(CritterCompiler.toPrimitiveString(ast))
+        println(CritterCompiler.toPrimitiveString(getAst(resourceName = "sample_program.txt")))
+        println(CritterCompiler.toPrimitiveString(getAst(resourceName = "critter-program.txt")))
     }
 
 }

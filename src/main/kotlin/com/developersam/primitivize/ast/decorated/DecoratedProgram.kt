@@ -44,8 +44,10 @@ data class DecoratedProgram(
         val newFunctions = ArrayList<DecoratedTopLevelMember.Function>(functions.size)
         newMembers.forEach { member ->
             when (member) {
-                is DecoratedTopLevelMember.Variable -> newVariables.add(element = member)
-                is DecoratedTopLevelMember.Function -> newFunctions.add(element = member)
+                is DecoratedTopLevelMember.Variable ->
+                    newVariables.add(element = member)
+                is DecoratedTopLevelMember.Function ->
+                    newFunctions.add(element = member.selfInline())
             }
         }
         return DecoratedProgram(

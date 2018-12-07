@@ -8,11 +8,12 @@ fun constant(): int = 4 * 3 + 2
 fun foo(): void = veryLongVar = constant()
 fun isGood(): bool = isGoodRecorder == 1
 
+recursive(3, 0) fun testRecursion(): int = 1 + testRecursion()
 
 fun main(): void =
   if isGood() then (
     reassign(3 + 2);
-    isGoodRecorder = 1
+    isGoodRecorder = testRecursion()
   ) else if smell() < energy() + nearby(3 + 2) then (
     foo();
     waitFor()

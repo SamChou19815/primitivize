@@ -28,6 +28,11 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
      * Returns function declaration from parse tree.
      */
     private fun getFunctionDeclaration(ctx: FunctionDeclarationContext): TopLevelMember.Function {
+        val recursiveHeader = ctx.recursiveFunctionHeader()?.let {
+            val depth = it.IntegerLiteral().symbol.text.toInt()
+            val expr = it.expression().accept(ExprBuilder)
+            depth to expr
+        }
         val argsIdentifiers: List<String> = ctx
                 .LowerIdentifier()
                 .let { it.subList(fromIndex = 1, toIndex = it.size) }
@@ -38,6 +43,7 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
         val args = argsIdentifiers.zip(argsTypes)
         val returnType = ctx.type().let { it[it.size - 1] }.accept(TypeBuilder)
         return TopLevelMember.Function(
+                recursiveHeader = recursiveHeader,
                 identifierLineNo = ctx.start.line,
                 identifier = ctx.LowerIdentifier(0).text,
                 arguments = args, returnType = returnType,
