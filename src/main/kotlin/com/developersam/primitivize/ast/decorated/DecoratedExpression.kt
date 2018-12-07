@@ -5,7 +5,6 @@ import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
 import com.developersam.primitivize.exceptions.IdentifierError
-import java.util.LinkedList
 import com.developersam.primitivize.ast.common.Literal as CommonLiteral
 
 /**
@@ -23,41 +22,13 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
     /**
      * [toMainIfElseBlock] returns the main expression as a chain of if else block.
      */
-    fun toMainIfElseBlock(): List<IfElseBlockItem> {
-        val list = LinkedList<IfElseBlockItem>()
-        var expr = this
-        while (expr is DecoratedExpression.IfElse) {
-            val conditionExpr = expr.condition
-            val actionExpr = expr.e1
-            if (actionExpr is DecoratedExpression.IfElse) {
-                actionExpr.toMainIfElseBlock().map { nestedIfElseItem ->
-                    nestedIfElseItem.copy(condition = DecoratedExpression.Binary(
-                            left = conditionExpr,
-                            op = BinaryOperator.AND,
-                            right = nestedIfElseItem.condition,
-                            type = ExprType.Void
-                    ))
-                }.let(block = list::addAll)
-            } else {
-                list.add(element = IfElseBlockItem(condition = conditionExpr, action = actionExpr))
-            }
-            expr = expr.e2
-        }
-        val finalExpr = expr
-        if (finalExpr is DecoratedExpression.IfElse) {
-            list.addAll(elements = finalExpr.toMainIfElseBlock())
-        } else {
-            val item = IfElseBlockItem(
-                    condition = DecoratedExpression.Literal(value = true), action = finalExpr
-            )
-            list.add(element = item)
-        }
-        return list
-    }
+    open fun toMainIfElseBlock(): List<IfElseBlockItem> = listOf(element = IfElseBlockItem(
+            condition = Literal.TRUE, action = this
+    ))
 
     /**
      * Return a decorated expression where each expression inside it is mapped by [f].
-     * This function is designed to reduce boilterplate.
+     * This function is designed to reduce boilerplate.
      */
     protected abstract fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression
 
@@ -112,11 +83,15 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
             throw UnsupportedOperationException()
         }
 
+        override fun toMainIfElseBlock(): List<IfElseBlockItem> {
+            throw UnsupportedOperationException()
+        }
+
         /**
          * @see DecoratedExpression.map
          */
         override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
-                this
+                throw UnsupportedOperationException()
 
     }
 
@@ -154,6 +129,21 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
                 this
+
+        companion object {
+            /**
+             * The true literal value.
+             */
+            val TRUE: Literal = Literal(value = true)
+            /**
+             * The zero literal value.
+             */
+            val ZERO: Literal = Literal(value = 0)
+            /**
+             * The one literal value.
+             */
+            val ONE: Literal = Literal(value = 1)
+        }
 
     }
 
@@ -209,6 +199,14 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun acceptConversion(converter: AstToCodeConverter): Unit =
                 converter.convert(node = this)
+
+        /**
+         * @see DecoratedExpression.toMainIfElseBlock
+         */
+        override fun toMainIfElseBlock(): List<IfElseBlockItem> =
+                expr.toMainIfElseBlock().map { (condition, e) ->
+                    IfElseBlockItem(condition = condition, action = Not(expr = e))
+                }
 
         /**
          * @see DecoratedExpression.map
@@ -299,6 +297,56 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
+         * @see DecoratedExpression.toMainIfElseBlock
+         */
+        override fun toMainIfElseBlock(): List<IfElseBlockItem> =
+                if (left is IfElse && right is IfElse) {
+                    val leftCondition = left.condition
+                    val rightCondition = right.condition
+                    IfElse(
+                            condition = Binary(
+                                    left = leftCondition, op = BinaryOperator.AND,
+                                    right = rightCondition, type = ExprType.Bool
+                            ),
+                            e1 = Binary(
+                                    left = left.e1, op = op, right = right.e1, type = type
+                            ),
+                            e2 = IfElse(
+                                    condition = leftCondition,
+                                    e1 = Binary(
+                                            left = left.e1, op = op, right = right.e2, type = type
+                                    ),
+                                    e2 = IfElse(
+                                            condition = rightCondition,
+                                            e1 = Binary(
+                                                    left = left.e2, op = op,
+                                                    right = right.e1, type = type
+                                            ),
+                                            e2 = Binary(
+                                                    left = left.e2, op = op,
+                                                    right = right.e2, type = type
+                                            ),
+                                            type = type
+                                    ),
+                                    type = type
+                            ),
+                            type = type
+                    ).toMainIfElseBlock()
+                } else if (left is IfElse) {
+                    left.copy(
+                            e1 = Binary(left = left.e1, op = op, right = right, type = type),
+                            e2 = Binary(left = left.e2, op = op, right = right, type = type)
+                    ).toMainIfElseBlock()
+                } else if (right is IfElse) {
+                    right.copy(
+                            e1 = Binary(left = left, op = op, right = right.e1, type = type),
+                            e2 = Binary(left = left, op = op, right = right.e2, type = type)
+                    ).toMainIfElseBlock()
+                } else {
+                    super.toMainIfElseBlock()
+                }
+
+        /**
          * @see DecoratedExpression.map
          */
         override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
@@ -326,6 +374,26 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
                 converter.convert(node = this)
 
         /**
+         * @see DecoratedExpression.toMainIfElseBlock
+         */
+        override fun toMainIfElseBlock(): List<IfElseBlockItem> {
+            val e1List = e1.toMainIfElseBlock()
+            val e2List = e2.toMainIfElseBlock()
+            val list = ArrayList<IfElseBlockItem>(e1List.size + e2List.size)
+            for ((itemCondition, action) in e1List) {
+                list.add(IfElseBlockItem(
+                        condition = Binary(
+                                left = condition, op = BinaryOperator.AND,
+                                right = itemCondition, type = ExprType.Bool
+                        ),
+                        action = action
+                ))
+            }
+            list.addAll(elements = e2List)
+            return list
+        }
+
+        /**
          * @see DecoratedExpression.map
          */
         override fun map(f: (DecoratedExpression) -> DecoratedExpression): DecoratedExpression =
@@ -351,6 +419,17 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun acceptConversion(converter: AstToCodeConverter): Unit =
                 converter.convert(node = this)
+
+        /**
+         * @see DecoratedExpression.toMainIfElseBlock
+         */
+        override fun toMainIfElseBlock(): List<IfElseBlockItem> =
+                expr.toMainIfElseBlock().map { (condition, e) ->
+                    IfElseBlockItem(
+                            condition = condition,
+                            action = Assign(identifier = identifier, expr = e)
+                    )
+                }
 
         /**
          * @see DecoratedExpression.map
@@ -396,6 +475,46 @@ sealed class DecoratedExpression(private val precedenceLevel: Int) : CodeConvert
          */
         override fun acceptConversion(converter: AstToCodeConverter) =
                 converter.convert(node = this)
+
+        /**
+         * @see DecoratedExpression.toMainIfElseBlock
+         */
+        override fun toMainIfElseBlock(): List<IfElseBlockItem> =
+                if (e1 is IfElse && e2 is IfElse) {
+                    val e1Condition = e1.condition
+                    val e2Condition = e2.condition
+                    IfElse(
+                            condition = Binary(
+                                    left = e1Condition, op = BinaryOperator.AND,
+                                    right = e2Condition, type = ExprType.Bool
+                            ),
+                            e1 = Chain(e1 = e1.e1, e2 = e2.e1),
+                            e2 = IfElse(
+                                    condition = e1Condition,
+                                    e1 = Chain(e1 = e1.e1, e2 = e2.e2),
+                                    e2 = IfElse(
+                                            condition = e2Condition,
+                                            e1 = Chain(e1 = e1.e2, e2 = e2.e1),
+                                            e2 = Chain(e1 = e1.e2, e2 = e2.e2),
+                                            type = type
+                                    ),
+                                    type = type
+                            ),
+                            type = type
+                    ).toMainIfElseBlock()
+                } else if (e1 is IfElse) {
+                    e1.copy(
+                            e1 = Chain(e1 = e1.e1, e2 = e2),
+                            e2 = Chain(e1 = e1.e2, e2 = e2)
+                    ).toMainIfElseBlock()
+                } else if (e2 is IfElse) {
+                    e2.copy(
+                            e1 = Chain(e1 = e1, e2 = e2.e1),
+                            e2 = Chain(e1 = e1, e2 = e2.e2)
+                    ).toMainIfElseBlock()
+                } else {
+                    super.toMainIfElseBlock()
+                }
 
         /**
          * @see DecoratedExpression.map

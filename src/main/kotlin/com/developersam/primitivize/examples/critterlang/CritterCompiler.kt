@@ -10,6 +10,7 @@ import com.developersam.primitivize.ast.type.ExprType
 import com.developersam.primitivize.codegen.AstToCodeConverter
 import com.developersam.primitivize.codegen.CodeConvertible
 import com.developersam.primitivize.codegen.IdtQueue
+import com.developersam.primitivize.codegen.PrettyPrinter
 
 /**
  * [CritterCompiler] is an example printer that takes the AST and compiles it to critter programs.
@@ -73,12 +74,12 @@ class CritterCompiler private constructor() {
                             variable = "var-1", type = ExprType.Int
                     ),
                     op = BinaryOperator.EQ,
-                    right = DecoratedExpression.Literal(value = 0),
+                    right = DecoratedExpression.Literal.ZERO,
                     type = ExprType.Bool
             )
             var action: DecoratedExpression = DecoratedExpression.Assign(
                     identifier = "var-1",
-                    expr = DecoratedExpression.Literal(value = 1)
+                    expr = DecoratedExpression.Literal.ONE
             )
             for (v in this) {
                 action = DecoratedExpression.Chain(
@@ -143,8 +144,12 @@ class CritterCompiler private constructor() {
             q.addLine(line = "$leftCode $opCode $rightCode")
         }
 
-        override fun convert(node: DecoratedExpression.IfElse): Unit =
-                throw UnsupportedOperationException("Only top level if-else blocks are supported!")
+        override fun convert(node: DecoratedExpression.IfElse) {
+            val nodeString = PrettyPrinter.prettyPrint(node)
+            throw UnsupportedOperationException(
+                    "Only top level if-else blocks are supported!\nNode:\n$nodeString"
+            )
+        }
 
         override fun convert(node: DecoratedExpression.FunctionApplication) {
             val identifierString = when (node.identifier) {
@@ -177,8 +182,10 @@ class CritterCompiler private constructor() {
         /**
          * [toPrimitiveString] returns the [processedProgram] as a string of indented code.
          */
-        fun toPrimitiveString(processedProgram: ProcessedProgram): String =
-                Visitor().apply { convert(node = processedProgram) }.q.toIndentedCode()
+        fun toPrimitiveString(processedProgram: ProcessedProgram): String {
+            println(PrettyPrinter.prettyPrint(processedProgram))
+            return Visitor().apply { convert(node = processedProgram) }.q.toIndentedCode()
+        }
 
     }
 
