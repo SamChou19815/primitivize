@@ -139,6 +139,7 @@ class CritterCompiler private constructor() {
                 "==" -> "="
                 "&&" -> "and"
                 "||" -> "or"
+                "%" -> "mod"
                 else -> node.op.symbol
             }
             q.addLine(line = "$leftCode $opCode $rightCode")
