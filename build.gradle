@@ -2,7 +2,6 @@ plugins {
     id 'antlr'
     id 'application'
     id 'org.jetbrains.kotlin.jvm' version '1.3.50'
-    id 'org.jetbrains.dokka' version '0.9.17'
     id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
 
@@ -43,18 +42,9 @@ compileTestKotlin {
 compileJava.dependsOn generateGrammarSource
 compileKotlin.dependsOn generateGrammarSource
 
-dokka {
-    outputFormat = 'html'
-    outputDirectory = "../docs"
-    jdkVersion = 8
-    skipDeprecated = false
-    skipEmptyPackages = true
-    impliedPlatforms = ['JVM']
-}
-
 test {
     testLogging {
-        events "passed", "skipped", "failed", "standardOut", "standardError"
+        events "skipped", "failed"
     }
 }
 
