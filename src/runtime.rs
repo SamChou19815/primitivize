@@ -3,6 +3,7 @@ use im::{hashmap, HashMap};
 
 pub fn get_critter_world_runtime() -> HashMap<String, FunctionType> {
   hashmap! {
+    // memory slots
     String::from("memsize") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
     String::from("defense") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
     String::from("offense") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
@@ -10,7 +11,7 @@ pub fn get_critter_world_runtime() -> HashMap<String, FunctionType> {
     String::from("energy") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
     String::from("pass") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
     String::from("posture") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
-
+    // actions
     String::from("wait") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::VoidType },
     String::from("forward") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::VoidType },
     String::from("backward") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::VoidType },
@@ -22,7 +23,7 @@ pub fn get_critter_world_runtime() -> HashMap<String, FunctionType> {
     String::from("bud") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::VoidType },
     String::from("mate") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::VoidType },
     String::from("serve") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::VoidType },
-
+    // sensors
     String::from("nearby") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::IntType },
     String::from("ahead") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::IntType },
     String::from("random") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::IntType },
