@@ -15,7 +15,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Cargo Format
-        run: cd rust-rewrite && cargo fmt -- --check
       - name: Cargo Build
         run: cd rust-rewrite && cargo build
+      - name: Cargo Format
+        run: cd rust-rewrite && cargo fmt -- --check
