@@ -10,5 +10,12 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: Build
+      - name: Gradle Build
         run: gradle build
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Cargo Format
+        run: cd rust-rewrite && cargo fmt -- --check
+      - name: Cargo Build
+        run: cd rust-rewrite && cargo build

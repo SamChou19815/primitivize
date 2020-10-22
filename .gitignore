@@ -31,3 +31,6 @@ hs_err_pid*
 # Generated Parser
 /src/main/java/
 *.tokens
+
+# random
+.DS_Store
