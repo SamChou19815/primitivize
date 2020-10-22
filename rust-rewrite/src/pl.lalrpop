@@ -1,0 +1,6 @@
+use std::str::FromStr;
+use crate::ast::{LiteralValue};
+
+grammar;
+
+pub LiteralValue: LiteralValue = r"[0-9]+" => LiteralValue::IntLiteral(i32::from_str(<>).unwrap());
