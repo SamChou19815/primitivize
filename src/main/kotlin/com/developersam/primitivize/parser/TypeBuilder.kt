@@ -9,7 +9,7 @@ import com.developersam.primitivize.ast.type.ExprType
  */
 object TypeBuilder : PLBaseVisitor<ExprType>() {
 
-    override fun visitType(ctx: PLParser.TypeContext): ExprType = when {
+    override fun visitExprType(ctx: PLParser.ExprTypeContext): ExprType = when {
         ctx.VOID() != null -> ExprType.Void
         ctx.INT() != null -> ExprType.Int
         ctx.BOOL() != null -> ExprType.Bool

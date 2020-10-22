@@ -1,5 +1,8 @@
 # rust
 target
 
+# parser
+src/parser/PL*
+
 # random
 .DS_Store

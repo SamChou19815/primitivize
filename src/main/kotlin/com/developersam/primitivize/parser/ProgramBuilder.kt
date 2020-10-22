@@ -37,11 +37,11 @@ internal object ProgramBuilder : PLBaseVisitor<RawProgram>() {
                 .LowerIdentifier()
                 .let { it.subList(fromIndex = 1, toIndex = it.size) }
                 .map { it.text }
-        val argsTypes: List<ExprType> = ctx.type()
+        val argsTypes: List<ExprType> = ctx.exprType()
                 .let { it.subList(fromIndex = 0, toIndex = it.size - 1) }
                 .map { it.accept(TypeBuilder) }
         val args = argsIdentifiers.zip(argsTypes)
-        val returnType = ctx.type().let { it[it.size - 1] }.accept(TypeBuilder)
+        val returnType = ctx.exprType().let { it[it.size - 1] }.accept(TypeBuilder)
         return TopLevelMember.Function(
                 recursiveHeader = recursiveHeader,
                 identifierLineNo = ctx.start.line,

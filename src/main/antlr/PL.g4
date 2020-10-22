@@ -12,8 +12,8 @@ variableDeclaration: VAR LowerIdentifier ASSIGN expression;
 
 functionDeclaration :
     recursiveFunctionHeader? FUN LowerIdentifier
-    (LPAREN RPAREN | LPAREN LowerIdentifier COLON type (COMMA LowerIdentifier COLON type)* RPAREN)
-    COLON type ASSIGN expression;
+    (LPAREN RPAREN | LPAREN LowerIdentifier COLON exprType (COMMA LowerIdentifier COLON exprType)* RPAREN)
+    COLON exprType ASSIGN expression;
 
 recursiveFunctionHeader : RECURSIVE LPAREN IntegerLiteral COMMA expression RPAREN;
 
@@ -47,4 +47,4 @@ literal : IntegerLiteral | BooleanLiteral ;
 
 // Types
 
-type : INT | BOOL | VOID ;
+exprType : INT | BOOL | VOID ;
