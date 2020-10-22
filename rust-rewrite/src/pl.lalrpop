@@ -1,16 +1,200 @@
 use std::str::FromStr;
-use crate::ast::{LiteralValue, ExpressionStaticType};
+// use base::pos::{self, BytePos, Spanned};
+use crate::ast::{
+  LiteralValue,
+  BinaryOperator,
+  ExpressionStaticType,
+  SourceLanguageExpression,
+  SourceLanguageMutableGlobalVariableDefinition,
+  SourceLanguageFunctionDefinition,
+};
 
 grammar;
 
-pub LiteralValue: LiteralValue = {
+LiteralValue: LiteralValue = {
   r"[0-9]+" => LiteralValue::IntLiteral(i32::from_str(<>).unwrap()),
   "true" => LiteralValue::BoolLiteral(true),
   "false" => LiteralValue::BoolLiteral(false),
 }
 
-pub ExpressionStaticType: ExpressionStaticType = {
+ExpressionStaticType: ExpressionStaticType = {
   "void" => ExpressionStaticType::VoidType,
   "int" => ExpressionStaticType::IntType,
   "bool" => ExpressionStaticType::BoolType,
+}
+
+Identifier: String = "r[a-z][A-Za-z0-9]*" => <>.to_string();
+
+SimpleExpression : SourceLanguageExpression = {
+  <l:@L> <literal:LiteralValue> => SourceLanguageExpression::LiteralExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    literal: literal,
+  },
+  <l:@L> <identifier: Identifier> => SourceLanguageExpression::VariableExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    identifier,
+  },
+  "(" <e: SourceLanguageExpression> ")" => e,
+}
+
+NotExpression : SourceLanguageExpression = {
+  SimpleExpression,
+  <l:@L> "!" <e: NotExpression> => SourceLanguageExpression::NotExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    sub_expression: Box::new(e)
+  },
+}
+
+FunctionCallExpression : SourceLanguageExpression = {
+  NotExpression,
+  <l:@L> <function_name: Identifier> "(" ")" => SourceLanguageExpression::FunctionCallExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    function_name: function_name,
+    // TODO: read args!!!
+    function_arguments: Vec::new()
+  },
+}
+
+FactorOp: BinaryOperator = {
+  "*" => BinaryOperator::MUL,
+  "/" => BinaryOperator::DIV,
+  "%" => BinaryOperator::MOD,
+}
+
+FactorExpression : SourceLanguageExpression = {
+  FunctionCallExpression,
+  <l:@L> <e1: FactorExpression> <op: FactorOp> <e2: FunctionCallExpression>
+  => SourceLanguageExpression::BinaryExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    operator: op,
+    e1: Box::new(e1),
+    e2: Box::new(e2),
+  },
+}
+
+TermOp: BinaryOperator = {
+  "+" => BinaryOperator::PLUS,
+  "-" => BinaryOperator::MINUS,
+}
+
+TermExpression : SourceLanguageExpression = {
+  FactorExpression,
+  <l:@L> <e1: TermExpression> <op: TermOp> <e2: FactorExpression>
+  => SourceLanguageExpression::BinaryExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    operator: op,
+    e1: Box::new(e1),
+    e2: Box::new(e2),
+  },
+}
+
+ComparisonOp: BinaryOperator = {
+  "<" => BinaryOperator::LT,
+  "<=" => BinaryOperator::LE,
+  ">" => BinaryOperator::GT,
+  ">=" => BinaryOperator::GE,
+  "==" => BinaryOperator::EQ,
+  "!=" => BinaryOperator::NE,
+}
+
+ComparisonExpression : SourceLanguageExpression = {
+  TermExpression,
+  <l:@L> <e1: ComparisonExpression> <op: ComparisonOp> <e2: TermExpression>
+  => SourceLanguageExpression::BinaryExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    operator: op,
+    e1: Box::new(e1),
+    e2: Box::new(e2),
+  },
+}
+
+ConjunctionExpression : SourceLanguageExpression = {
+  ComparisonExpression,
+  <l:@L> <e1: ConjunctionExpression> "&&" <e2: ComparisonExpression>
+  => SourceLanguageExpression::BinaryExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    operator: BinaryOperator::AND,
+    e1: Box::new(e1),
+    e2: Box::new(e2),
+  },
+}
+
+DisjunctionExpression : SourceLanguageExpression = {
+  ConjunctionExpression,
+  <l:@L> <e1: DisjunctionExpression> "||" <e2: ConjunctionExpression>
+  => SourceLanguageExpression::BinaryExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    operator: BinaryOperator::OR,
+    e1: Box::new(e1),
+    e2: Box::new(e2),
+  },
+}
+
+IfElseExpression : SourceLanguageExpression = {
+  DisjunctionExpression,
+  <l:@L> "if" <c: SourceLanguageExpression> "then"
+    <e1: IfElseExpression>
+  "else"
+    <e2: IfElseExpression>
+  => SourceLanguageExpression::IfElseExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    condition: Box::new(c),
+    e1: Box::new(e1),
+    e2: Box::new(e2),
+  },
+}
+
+AssignExpression : SourceLanguageExpression = {
+  IfElseExpression,
+  <l:@L> <identifier: Identifier> "=" <e: IfElseExpression>
+  => SourceLanguageExpression::AssignmentExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    identifier,
+    assigned_expression: Box::new(e),
+  },
+}
+
+SourceLanguageExpression : SourceLanguageExpression = {
+  AssignExpression,
+  <l:@L> <e1: SourceLanguageExpression> ";" <e2: AssignExpression>
+  => SourceLanguageExpression::ChainExpression {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    e1: Box::new(e1),
+    e2: Box::new(e2),
+  }
+}
+
+pub SourceLanguageMutableGlobalVariableDefinition : SourceLanguageMutableGlobalVariableDefinition = {
+  <l:@L> "var" <identifier: Identifier> "=" <e: SourceLanguageExpression>
+  => SourceLanguageMutableGlobalVariableDefinition {
+    line_number: l,
+    static_type: ExpressionStaticType::VoidType,
+    identifier,
+    assigned_expression: e,
+  }
+};
+
+pub SourceLanguageFunctionDefinition : SourceLanguageFunctionDefinition = {
+  <l:@L> "fun" <identifier: Identifier> "("
+  ")" ":" <return_type: ExpressionStaticType> "=" <e: SourceLanguageExpression>
+  => SourceLanguageFunctionDefinition {
+    line_number: l,
+    identifier,
+    // TODO: read args!!!
+    function_arguments: Vec::new(),
+    return_type,
+    body: e,
+  }
 }

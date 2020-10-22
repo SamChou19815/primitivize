@@ -44,62 +44,50 @@ pub enum ExpressionStaticType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub struct Position {
-  line_number: i32,
-  column_number: i32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub struct Range {
-  start: Position,
-  end: Position,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub enum SourceLanguageExpression {
   LiteralExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     literal: LiteralValue,
   },
   VariableExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     identifier: String,
   },
   NotExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     sub_expression: Box<SourceLanguageExpression>,
   },
   FunctionCallExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     function_name: String,
     function_arguments: Vec<SourceLanguageExpression>,
   },
   BinaryExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     operator: BinaryOperator,
     e1: Box<SourceLanguageExpression>,
     e2: Box<SourceLanguageExpression>,
   },
   IfElseExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     condition: Box<SourceLanguageExpression>,
     e1: Box<SourceLanguageExpression>,
     e2: Box<SourceLanguageExpression>,
   },
   AssignmentExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     identifier: String,
     assigned_expression: Box<SourceLanguageExpression>,
   },
   ChainExpression {
-    range: Range,
+    line_number: usize,
     static_type: ExpressionStaticType,
     e1: Box<SourceLanguageExpression>,
     e2: Box<SourceLanguageExpression>,
@@ -108,24 +96,23 @@ pub enum SourceLanguageExpression {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct SourceLanguageMutableGlobalVariableDefinition {
-  range: Range,
-  static_type: ExpressionStaticType,
-  identifier: String,
-  assigned_expression: SourceLanguageExpression,
+  pub line_number: usize,
+  pub static_type: ExpressionStaticType,
+  pub identifier: String,
+  pub assigned_expression: SourceLanguageExpression,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct SourceLanguageFunctionDefinition {
-  range: Range,
-  identifier: String,
-  identifier_range: Range,
-  function_arguments: Vec<(String, ExpressionStaticType)>,
-  return_type: ExpressionStaticType,
-  body: SourceLanguageExpression,
+  pub line_number: usize,
+  pub identifier: String,
+  pub function_arguments: Vec<(String, ExpressionStaticType)>,
+  pub return_type: ExpressionStaticType,
+  pub body: SourceLanguageExpression,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct SourceLanguageProgram {
-  global_variable_definitions: Vec<SourceLanguageMutableGlobalVariableDefinition>,
-  function_definitions: Vec<SourceLanguageFunctionDefinition>,
+  pub global_variable_definitions: Vec<SourceLanguageMutableGlobalVariableDefinition>,
+  pub function_definitions: Vec<SourceLanguageFunctionDefinition>,
 }
