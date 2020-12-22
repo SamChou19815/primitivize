@@ -2,14 +2,38 @@ use std::str::FromStr;
 // use base::pos::{self, BytePos, Spanned};
 use crate::ast::{
   LiteralValue,
+  FunctionCategory,
   BinaryOperator,
   ExpressionStaticType,
   SourceLanguageExpression,
   SourceLanguageMutableGlobalVariableDefinition,
   SourceLanguageFunctionDefinition,
+  SourceLanguageProgram,
 };
 
 grammar;
+
+Comma<T>: Vec<T> = { // (1)
+  <v:(<T> ",")*> <e:T?> => match e { // (2)
+      None => v,
+      Some(e) => {
+          let mut v = v;
+          v.push(e);
+          v
+      }
+  }
+};
+
+Semicolon<T>: Vec<T> = { // (1)
+  <v:(<T> ";")*> <e:T?> => match e { // (2)
+      None => v,
+      Some(e) => {
+          let mut v = v;
+          v.push(e);
+          v
+      }
+  }
+};
 
 LiteralValue: LiteralValue = {
   r"[0-9]+" => LiteralValue::IntLiteral(i32::from_str(<>).unwrap()),
@@ -40,23 +64,24 @@ SimpleExpression : SourceLanguageExpression = {
 }
 
 NotExpression : SourceLanguageExpression = {
-  SimpleExpression,
   <l:@L> "!" <e: NotExpression> => SourceLanguageExpression::NotExpression {
     line_number: l,
     static_type: ExpressionStaticType::VoidType,
     sub_expression: Box::new(e)
   },
+  SimpleExpression,
 }
 
 FunctionCallExpression : SourceLanguageExpression = {
-  NotExpression,
-  <l:@L> <function_name: Identifier> "(" ")" => SourceLanguageExpression::FunctionCallExpression {
+  <l:@L> <function_name: Identifier> "("
+  <function_arguments: Comma<SourceLanguageExpression>>
+  ")" => SourceLanguageExpression::FunctionCallExpression {
     line_number: l,
     static_type: ExpressionStaticType::VoidType,
-    function_name: function_name,
-    // TODO: read args!!!
-    function_arguments: Vec::new()
+    function_name,
+    function_arguments,
   },
+  NotExpression,
 }
 
 FactorOp: BinaryOperator = {
@@ -66,7 +91,6 @@ FactorOp: BinaryOperator = {
 }
 
 FactorExpression : SourceLanguageExpression = {
-  FunctionCallExpression,
   <l:@L> <e1: FactorExpression> <op: FactorOp> <e2: FunctionCallExpression>
   => SourceLanguageExpression::BinaryExpression {
     line_number: l,
@@ -75,6 +99,7 @@ FactorExpression : SourceLanguageExpression = {
     e1: Box::new(e1),
     e2: Box::new(e2),
   },
+  FunctionCallExpression,
 }
 
 TermOp: BinaryOperator = {
@@ -83,7 +108,6 @@ TermOp: BinaryOperator = {
 }
 
 TermExpression : SourceLanguageExpression = {
-  FactorExpression,
   <l:@L> <e1: TermExpression> <op: TermOp> <e2: FactorExpression>
   => SourceLanguageExpression::BinaryExpression {
     line_number: l,
@@ -92,6 +116,7 @@ TermExpression : SourceLanguageExpression = {
     e1: Box::new(e1),
     e2: Box::new(e2),
   },
+  FactorExpression,
 }
 
 ComparisonOp: BinaryOperator = {
@@ -104,7 +129,6 @@ ComparisonOp: BinaryOperator = {
 }
 
 ComparisonExpression : SourceLanguageExpression = {
-  TermExpression,
   <l:@L> <e1: ComparisonExpression> <op: ComparisonOp> <e2: TermExpression>
   => SourceLanguageExpression::BinaryExpression {
     line_number: l,
@@ -113,10 +137,10 @@ ComparisonExpression : SourceLanguageExpression = {
     e1: Box::new(e1),
     e2: Box::new(e2),
   },
+  TermExpression,
 }
 
 ConjunctionExpression : SourceLanguageExpression = {
-  ComparisonExpression,
   <l:@L> <e1: ConjunctionExpression> "&&" <e2: ComparisonExpression>
   => SourceLanguageExpression::BinaryExpression {
     line_number: l,
@@ -125,10 +149,10 @@ ConjunctionExpression : SourceLanguageExpression = {
     e1: Box::new(e1),
     e2: Box::new(e2),
   },
+  ComparisonExpression,
 }
 
 DisjunctionExpression : SourceLanguageExpression = {
-  ConjunctionExpression,
   <l:@L> <e1: DisjunctionExpression> "||" <e2: ConjunctionExpression>
   => SourceLanguageExpression::BinaryExpression {
     line_number: l,
@@ -137,10 +161,10 @@ DisjunctionExpression : SourceLanguageExpression = {
     e1: Box::new(e1),
     e2: Box::new(e2),
   },
+  ConjunctionExpression,
 }
 
 IfElseExpression : SourceLanguageExpression = {
-  DisjunctionExpression,
   <l:@L> "if" <c: SourceLanguageExpression> "then"
     <e1: IfElseExpression>
   "else"
@@ -152,10 +176,10 @@ IfElseExpression : SourceLanguageExpression = {
     e1: Box::new(e1),
     e2: Box::new(e2),
   },
+  DisjunctionExpression,
 }
 
 AssignExpression : SourceLanguageExpression = {
-  IfElseExpression,
   <l:@L> <identifier: Identifier> "=" <e: IfElseExpression>
   => SourceLanguageExpression::AssignmentExpression {
     line_number: l,
@@ -163,20 +187,20 @@ AssignExpression : SourceLanguageExpression = {
     identifier,
     assigned_expression: Box::new(e),
   },
+  IfElseExpression,
 }
 
 SourceLanguageExpression : SourceLanguageExpression = {
-  AssignExpression,
-  <l:@L> <e1: SourceLanguageExpression> ";" <e2: AssignExpression>
+  <l:@L> "{" <expressions: Semicolon<SourceLanguageExpression>> "}"
   => SourceLanguageExpression::ChainExpression {
     line_number: l,
     static_type: ExpressionStaticType::VoidType,
-    e1: Box::new(e1),
-    e2: Box::new(e2),
-  }
+    expressions,
+  },
+  AssignExpression,
 }
 
-pub SourceLanguageMutableGlobalVariableDefinition : SourceLanguageMutableGlobalVariableDefinition = {
+SourceLanguageMutableGlobalVariableDefinition : SourceLanguageMutableGlobalVariableDefinition = {
   <l:@L> "var" <identifier: Identifier> "=" <e: SourceLanguageExpression>
   => SourceLanguageMutableGlobalVariableDefinition {
     line_number: l,
@@ -186,15 +210,28 @@ pub SourceLanguageMutableGlobalVariableDefinition : SourceLanguageMutableGlobalV
   }
 };
 
-pub SourceLanguageFunctionDefinition : SourceLanguageFunctionDefinition = {
+FunctionArgument: (String, ExpressionStaticType) =
+  <identifier: Identifier> ":" <t: ExpressionStaticType> => (identifier, t);
+
+SourceLanguageFunctionDefinition : SourceLanguageFunctionDefinition = {
   <l:@L> "fun" <identifier: Identifier> "("
+  <function_arguments: Comma<FunctionArgument>>
   ")" ":" <return_type: ExpressionStaticType> "=" <e: SourceLanguageExpression>
   => SourceLanguageFunctionDefinition {
     line_number: l,
+    category: FunctionCategory::UserDefined,
     identifier,
-    // TODO: read args!!!
-    function_arguments: Vec::new(),
+    function_arguments,
     return_type,
     body: e,
+  }
+}
+
+pub SourceLanguageProgram : SourceLanguageProgram = {
+  <global_variable_definitions: SourceLanguageMutableGlobalVariableDefinition*>
+  <function_definitions: SourceLanguageFunctionDefinition*>
+  => SourceLanguageProgram {
+    global_variable_definitions,
+    function_definitions,
   }
 }

@@ -89,8 +89,7 @@ pub enum SourceLanguageExpression {
   ChainExpression {
     line_number: usize,
     static_type: ExpressionStaticType,
-    e1: Box<SourceLanguageExpression>,
-    e2: Box<SourceLanguageExpression>,
+    expressions: Vec<SourceLanguageExpression>,
   },
 }
 
@@ -105,6 +104,7 @@ pub struct SourceLanguageMutableGlobalVariableDefinition {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct SourceLanguageFunctionDefinition {
   pub line_number: usize,
+  pub category: FunctionCategory,
   pub identifier: String,
   pub function_arguments: Vec<(String, ExpressionStaticType)>,
   pub return_type: ExpressionStaticType,
