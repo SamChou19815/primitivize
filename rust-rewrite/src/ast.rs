@@ -64,7 +64,7 @@ pub enum SourceLanguageExpression {
     line_number: usize,
     static_type: ExpressionStaticType,
     function_name: String,
-    function_arguments: Vec<SourceLanguageExpression>,
+    function_arguments: Vec<Box<SourceLanguageExpression>>,
   },
   BinaryExpression {
     line_number: usize,
@@ -89,7 +89,7 @@ pub enum SourceLanguageExpression {
   ChainExpression {
     line_number: usize,
     static_type: ExpressionStaticType,
-    expressions: Vec<SourceLanguageExpression>,
+    expressions: Vec<Box<SourceLanguageExpression>>,
   },
 }
 
@@ -98,7 +98,7 @@ pub struct SourceLanguageMutableGlobalVariableDefinition {
   pub line_number: usize,
   pub static_type: ExpressionStaticType,
   pub identifier: String,
-  pub assigned_expression: SourceLanguageExpression,
+  pub assigned_expression: Box<SourceLanguageExpression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
@@ -108,11 +108,11 @@ pub struct SourceLanguageFunctionDefinition {
   pub identifier: String,
   pub function_arguments: Vec<(String, ExpressionStaticType)>,
   pub return_type: ExpressionStaticType,
-  pub body: SourceLanguageExpression,
+  pub body: Box<SourceLanguageExpression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct SourceLanguageProgram {
-  pub global_variable_definitions: Vec<SourceLanguageMutableGlobalVariableDefinition>,
-  pub function_definitions: Vec<SourceLanguageFunctionDefinition>,
+  pub global_variable_definitions: Vec<Box<SourceLanguageMutableGlobalVariableDefinition>>,
+  pub function_definitions: Vec<Box<SourceLanguageFunctionDefinition>>,
 }
