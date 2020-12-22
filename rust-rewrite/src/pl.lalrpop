@@ -47,7 +47,7 @@ ExpressionStaticType: ExpressionStaticType = {
   "bool" => ExpressionStaticType::BoolType,
 }
 
-Identifier: String = "r[a-z][A-Za-z0-9]*" => <>.to_string();
+Identifier: String = r"[a-z][A-Za-z0-9]*" => <>.to_string();
 
 SimpleExpression : Box<SourceLanguageExpression> = {
   <l:@L> <literal:LiteralValue> => Box::new(SourceLanguageExpression::LiteralExpression {
@@ -227,11 +227,11 @@ SourceLanguageFunctionDefinition : Box<SourceLanguageFunctionDefinition> = {
   })
 }
 
-pub SourceLanguageProgram : SourceLanguageProgram = {
+pub SourceLanguageProgram : Box<SourceLanguageProgram> = {
   <global_variable_definitions: SourceLanguageMutableGlobalVariableDefinition*>
   <function_definitions: SourceLanguageFunctionDefinition*>
-  => SourceLanguageProgram {
+  => Box::new(SourceLanguageProgram {
     global_variable_definitions,
     function_definitions,
-  }
+  })
 }

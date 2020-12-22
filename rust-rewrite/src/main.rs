@@ -1,7 +1,15 @@
 mod ast;
 #[rustfmt::skip]
 mod pl;
+mod parser;
 
 fn main() {
-  println!("Hello, world!");
+  match parser::parse_program("fun main(): void = {}") {
+    Ok(p) => {
+      println!("{:?}", p);
+    }
+    Err(e) => {
+      println!("{:}", e);
+    }
+  }
 }
