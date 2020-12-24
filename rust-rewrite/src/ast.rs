@@ -32,15 +32,25 @@ pub enum BinaryOperator {
   OR,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize)]
 pub enum ExpressionStaticType {
   VoidType,
   IntType,
   BoolType,
-  FunctionType {
-    argument_types: Vec<ExpressionStaticType>,
-    return_type: Box<ExpressionStaticType>,
-  },
+}
+
+pub fn pretty_print_expression_static_type(t: ExpressionStaticType) -> String {
+  match t {
+    ExpressionStaticType::VoidType => "void".to_string(),
+    ExpressionStaticType::IntType => "int".to_string(),
+    ExpressionStaticType::BoolType => "bool".to_string(),
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct FunctionType {
+  pub argument_types: Vec<ExpressionStaticType>,
+  pub return_type: ExpressionStaticType,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
