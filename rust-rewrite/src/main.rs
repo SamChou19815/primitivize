@@ -1,19 +1,18 @@
 mod ast;
 #[rustfmt::skip]
 mod pl;
-mod parser;
+mod checker;
 mod type_checker;
 use im::HashMap;
 
 fn main() {
-  let program = "fun main(): int = 32 + 10";
-  match parser::parse_program(program) {
+  let program = "fun main(): int = 32 + 10".to_string();
+  match checker::get_type_checked_program(HashMap::new(), program) {
     Ok(p) => {
-      let (checked_program, errors) = type_checker::type_check_program(HashMap::new(), p);
-      println!("{:?}\nErrors: {:?}", checked_program, errors);
+      println!("{:?}", p);
     }
     Err(e) => {
-      println!("{:}", e);
+      println!("Errors: {:?}", e);
     }
   }
 }
