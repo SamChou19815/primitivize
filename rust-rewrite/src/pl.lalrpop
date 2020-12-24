@@ -1,8 +1,6 @@
 use std::str::FromStr;
-// use base::pos::{self, BytePos, Spanned};
 use crate::ast::{
   LiteralValue,
-  FunctionCategory,
   BinaryOperator,
   ExpressionStaticType,
   SourceLanguageExpression,
@@ -200,31 +198,29 @@ SourceLanguageExpression : Box<SourceLanguageExpression> = {
   AssignExpression,
 }
 
-SourceLanguageMutableGlobalVariableDefinition : Box<SourceLanguageMutableGlobalVariableDefinition> = {
+SourceLanguageMutableGlobalVariableDefinition : SourceLanguageMutableGlobalVariableDefinition = {
   <l:@L> "var" <identifier: Identifier> "=" <assigned_expression: SourceLanguageExpression>
-  => Box::new(SourceLanguageMutableGlobalVariableDefinition {
+  => SourceLanguageMutableGlobalVariableDefinition {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     identifier,
     assigned_expression,
-  })
+  }
 };
 
 FunctionArgument: (String, ExpressionStaticType) =
   <identifier: Identifier> ":" <t: ExpressionStaticType> => (identifier, t);
 
-SourceLanguageFunctionDefinition : Box<SourceLanguageFunctionDefinition> = {
+SourceLanguageFunctionDefinition : SourceLanguageFunctionDefinition = {
   <l:@L> "fun" <identifier: Identifier> "("
   <function_arguments: Comma<FunctionArgument>>
   ")" ":" <return_type: ExpressionStaticType> "=" <e: SourceLanguageExpression>
-  => Box::new(SourceLanguageFunctionDefinition {
+  => SourceLanguageFunctionDefinition {
     line_number: l,
-    category: FunctionCategory::UserDefined,
     identifier,
     function_arguments,
     return_type,
     body: e,
-  })
+  }
 }
 
 pub SourceLanguageProgram : Box<SourceLanguageProgram> = {

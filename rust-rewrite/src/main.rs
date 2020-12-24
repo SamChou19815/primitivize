@@ -3,11 +3,14 @@ mod ast;
 mod pl;
 mod parser;
 mod type_checker;
+use im::HashMap;
 
 fn main() {
-  match parser::parse_program("fun main(): void = {}") {
+  let program = "fun main(): int = 32 + 10";
+  match parser::parse_program(program) {
     Ok(p) => {
-      println!("{:?}", p);
+      let (checked_program, errors) = type_checker::type_check_program(HashMap::new(), p);
+      println!("{:?}\nErrors: {:?}", checked_program, errors);
     }
     Err(e) => {
       println!("{:}", e);
