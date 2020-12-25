@@ -2,8 +2,7 @@ mod ast;
 #[rustfmt::skip]
 mod pl;
 mod checker;
-mod lowering;
-mod type_checker;
+mod transform;
 use im::HashMap;
 
 fn main() {
@@ -11,7 +10,7 @@ fn main() {
   match checker::get_type_checked_program(HashMap::new(), program) {
     Ok(p) => {
       println!("Original: {:?}", p);
-      println!("Lowered: {:?}", lowering::lower_program(p));
+      println!("Lowered: {:?}", transform::lower_program(p));
     }
     Err(e) => {
       println!("Errors: {:?}", e);
