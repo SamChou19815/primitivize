@@ -123,21 +123,44 @@ fn lower_expression(
   }
 }
 
-/*
 fn lower_program(program: Box<SourceLanguageProgram>) -> Box<IRProgram> {
   let SourceLanguageProgram {
     global_variable_definitions,
     function_definitions,
   } = &*program;
 
+  let mut lowered_global_variable_definitions = Vec::new();
   for global_variable in global_variable_definitions {
     let SourceLanguageMutableGlobalVariableDefinition {
       line_number: _,
       identifier,
-      assigned_expression,
+      assigned_value,
     } = &*global_variable;
 
-
+    lowered_global_variable_definitions.push(IRMutableGlobalVariableDefinition {
+      identifier: (*identifier).clone(),
+      assigned_value: *assigned_value,
+    })
   }
+
+  // let mut lowered_function_definitions = Vec::new();
+  for function_definition in function_definitions {
+    let SourceLanguageFunctionDefinition {
+      line_number: _,
+      identifier,
+      function_arguments,
+      return_type,
+      body,
+    } = &*function_definition;
+
+    let function_argument_names: Vec<String> = (*function_arguments)
+      .iter()
+      .map(|(n, _)| (*n).clone())
+      .collect();
+  }
+
+  Box::new(IRProgram {
+    global_variable_definitions: lowered_global_variable_definitions,
+    function_definitions: vec![],
+  })
 }
-*/

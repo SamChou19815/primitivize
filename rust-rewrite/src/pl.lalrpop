@@ -33,6 +33,8 @@ Semicolon<T>: Vec<T> = { // (1)
   }
 };
 
+Num: i32 = r"[0-9]+" => i32::from_str(<>).unwrap();
+
 LiteralValue: LiteralValue = {
   r"[0-9]+" => LiteralValue::IntLiteral(i32::from_str(<>).unwrap()),
   "true" => LiteralValue::BoolLiteral(true),
@@ -199,11 +201,11 @@ SourceLanguageExpression : Box<SourceLanguageExpression> = {
 }
 
 SourceLanguageMutableGlobalVariableDefinition : SourceLanguageMutableGlobalVariableDefinition = {
-  <l:@L> "var" <identifier: Identifier> "=" <assigned_expression: SourceLanguageExpression>
+  <l:@L> "var" <identifier: Identifier> "=" <assigned_value: Num> ";"
   => SourceLanguageMutableGlobalVariableDefinition {
     line_number: l,
     identifier,
-    assigned_expression,
+    assigned_value,
   }
 };
 

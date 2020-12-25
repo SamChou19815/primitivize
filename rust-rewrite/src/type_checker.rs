@@ -421,20 +421,13 @@ pub fn type_check_program(
     let SourceLanguageMutableGlobalVariableDefinition {
       line_number,
       identifier,
-      assigned_expression,
+      assigned_value,
     } = &*global_variable;
 
     checked_global_variables.push(SourceLanguageMutableGlobalVariableDefinition {
       line_number: *line_number,
       identifier: (*identifier).clone(),
-      assigned_expression: type_check_expression(
-        &patched_functions_environment,
-        &global_values_environment,
-        &global_values_environment,
-        ExpressionStaticType::IntType,
-        &mut type_errors,
-        (*assigned_expression).clone(),
-      ),
+      assigned_value: *assigned_value,
     });
   }
 

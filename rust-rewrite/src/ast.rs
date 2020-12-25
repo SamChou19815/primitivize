@@ -98,7 +98,7 @@ pub enum SourceLanguageExpression {
 pub struct SourceLanguageMutableGlobalVariableDefinition {
   pub line_number: usize,
   pub identifier: String,
-  pub assigned_expression: Box<SourceLanguageExpression>,
+  pub assigned_value: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
@@ -148,7 +148,7 @@ pub enum IRStatement {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct IRMutableGlobalVariableDefinition {
   pub identifier: String,
-  pub assigned_expression: Box<IRExpression>,
+  pub assigned_value: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
