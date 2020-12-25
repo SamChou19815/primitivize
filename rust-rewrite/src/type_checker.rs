@@ -291,7 +291,12 @@ fn type_check_expression(
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
       line_number,
-      static_type: expected_type,
+      static_type: check_type(
+        line_number,
+        type_errors,
+        expected_type,
+        ExpressionStaticType::VoidType,
+      ),
       condition: type_check_expression(
         functions_environment,
         readable_values_environment,
@@ -304,7 +309,7 @@ fn type_check_expression(
         functions_environment,
         readable_values_environment,
         global_values_environment,
-        expected_type,
+        ExpressionStaticType::VoidType,
         type_errors,
         e1,
       ),
@@ -312,7 +317,7 @@ fn type_check_expression(
         functions_environment,
         readable_values_environment,
         global_values_environment,
-        expected_type,
+        ExpressionStaticType::VoidType,
         type_errors,
         e2,
       ),

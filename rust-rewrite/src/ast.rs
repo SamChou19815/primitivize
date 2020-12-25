@@ -155,7 +155,8 @@ pub struct IRMutableGlobalVariableDefinition {
 pub struct IRFunctionDefinition {
   pub identifier: String,
   pub function_arguments: Vec<String>,
-  pub body: Box<IRExpression>,
+  pub body_statements: Vec<Box<IRStatement>>,
+  pub body_final_expression: Option<Box<IRExpression>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]

@@ -1,8 +1,10 @@
 use crate::ast::{
-  IRExpression, IRFunctionDefinition, IRMutableGlobalVariableDefinition, IRProgram, IRStatement,
-  LiteralValue, SourceLanguageExpression, SourceLanguageFunctionDefinition,
+  ExpressionStaticType, IRExpression, IRFunctionDefinition, IRMutableGlobalVariableDefinition,
+  IRProgram, IRStatement, LiteralValue, SourceLanguageExpression, SourceLanguageFunctionDefinition,
   SourceLanguageMutableGlobalVariableDefinition, SourceLanguageProgram,
 };
+
+const DUMMY_ZERO: IRExpression = IRExpression::LiteralExpression(LiteralValue::IntLiteral(0));
 
 fn lower_expression(
   expression: Box<SourceLanguageExpression>,
@@ -78,16 +80,25 @@ fn lower_expression(
     SourceLanguageExpression::IfElseExpression {
       line_number: _,
       static_type: _,
-      condition: _,
-      e1: _,
-      e2: _,
-    } => (
-      // TODO if else
-      Box::new(IRExpression::LiteralExpression(LiteralValue::BoolLiteral(
-        false,
-      ))),
-      vec![],
-    ),
+      condition,
+      e1,
+      e2,
+    } => {
+      let (lowered_condition, lowered_condition_statements) = lower_expression(condition);
+      let (_, s1) = lower_expression(e1);
+      let (_, s2) = lower_expression(e2);
+
+      let mut statements = lowered_condition_statements.clone();
+      statements.push(Box::new(IRStatement::IfElseStatement {
+        condition: lowered_condition,
+        s1,
+        s2,
+      }));
+      (
+        Box::new(IRExpression::LiteralExpression(LiteralValue::IntLiteral(0))),
+        statements,
+      )
+    }
     SourceLanguageExpression::AssignmentExpression {
       line_number: _,
       static_type: _,
@@ -100,10 +111,7 @@ fn lower_expression(
         identifier,
         assigned_expression: lowered_assigned_expression,
       }));
-      (
-        Box::new(IRExpression::LiteralExpression(LiteralValue::IntLiteral(0))),
-        mutable_statements,
-      )
+      (Box::new(DUMMY_ZERO), mutable_statements)
     }
     SourceLanguageExpression::ChainExpression {
       line_number: _,
@@ -115,15 +123,12 @@ fn lower_expression(
         let (_, lowered_sub_expression_statements) = lower_expression(sub_expression);
         lowered_statements.append(&mut lowered_sub_expression_statements.clone());
       }
-      (
-        Box::new(IRExpression::LiteralExpression(LiteralValue::IntLiteral(0))),
-        lowered_statements,
-      )
+      (Box::new(DUMMY_ZERO), lowered_statements)
     }
   }
 }
 
-fn lower_program(program: Box<SourceLanguageProgram>) -> Box<IRProgram> {
+pub fn lower_program(program: Box<SourceLanguageProgram>) -> Box<IRProgram> {
   let SourceLanguageProgram {
     global_variable_definitions,
     function_definitions,
@@ -143,7 +148,7 @@ fn lower_program(program: Box<SourceLanguageProgram>) -> Box<IRProgram> {
     })
   }
 
-  // let mut lowered_function_definitions = Vec::new();
+  let mut lowered_function_definitions = Vec::new();
   for function_definition in function_definitions {
     let SourceLanguageFunctionDefinition {
       line_number: _,
@@ -157,10 +162,23 @@ fn lower_program(program: Box<SourceLanguageProgram>) -> Box<IRProgram> {
       .iter()
       .map(|(n, _)| (*n).clone())
       .collect();
+    let (lowered_body, body_statements) = lower_expression((*body).clone());
+    let body_final_expression = if *return_type == ExpressionStaticType::VoidType {
+      None
+    } else {
+      Some(lowered_body)
+    };
+
+    lowered_function_definitions.push(IRFunctionDefinition {
+      identifier: (*identifier).clone(),
+      function_arguments: function_argument_names,
+      body_statements,
+      body_final_expression,
+    });
   }
 
   Box::new(IRProgram {
     global_variable_definitions: lowered_global_variable_definitions,
-    function_definitions: vec![],
+    function_definitions: lowered_function_definitions,
   })
 }
