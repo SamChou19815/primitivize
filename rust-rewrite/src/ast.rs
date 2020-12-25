@@ -115,3 +115,32 @@ pub struct SourceLanguageProgram {
   pub global_variable_definitions: Vec<SourceLanguageMutableGlobalVariableDefinition>,
   pub function_definitions: Vec<SourceLanguageFunctionDefinition>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub enum IRExpression {
+  LiteralExpression(LiteralValue),
+  VariableExpression(String),
+  NotExpression(Box<IRExpression>),
+  FunctionCallExpression {
+    function_name: String,
+    function_arguments: Vec<Box<IRExpression>>,
+  },
+  BinaryExpression {
+    operator: BinaryOperator,
+    e1: Box<IRExpression>,
+    e2: Box<IRExpression>,
+  },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub enum IRStatement {
+  AssignmentStatement {
+    identifier: String,
+    assigned_expression: Box<IRExpression>,
+  },
+  IfElseStatement {
+    condition: Box<IRExpression>,
+    s1: Vec<Box<IRStatement>>,
+    s2: Vec<Box<IRStatement>>,
+  },
+}
