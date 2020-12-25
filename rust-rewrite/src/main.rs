@@ -2,6 +2,7 @@ mod ast;
 #[rustfmt::skip]
 mod pl;
 mod checker;
+mod lowering;
 mod type_checker;
 use im::HashMap;
 

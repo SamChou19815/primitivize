@@ -144,3 +144,22 @@ pub enum IRStatement {
     s2: Vec<Box<IRStatement>>,
   },
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct IRMutableGlobalVariableDefinition {
+  pub identifier: String,
+  pub assigned_expression: Box<IRExpression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct IRFunctionDefinition {
+  pub identifier: String,
+  pub function_arguments: Vec<String>,
+  pub body: Box<IRExpression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct IRProgram {
+  pub global_variable_definitions: Vec<IRMutableGlobalVariableDefinition>,
+  pub function_definitions: Vec<IRFunctionDefinition>,
+}
