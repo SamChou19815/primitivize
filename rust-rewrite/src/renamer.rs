@@ -1,13 +1,13 @@
 use crate::ast::{
-  SourceLanguageExpression, SourceLanguageFunctionDefinition,
+  ExpressionStaticType, SourceLanguageExpression, SourceLanguageFunctionDefinition,
   SourceLanguageMutableGlobalVariableDefinition, SourceLanguageProgram,
 };
 use std::collections::HashMap;
 
-fn replace_variable_in_expression(
+pub fn replace_variable_in_expression(
   expression: Box<SourceLanguageExpression>,
   global_variable_replacement_map: &HashMap<String, String>,
-  expression_replacement_map: &HashMap<String, String>,
+  expression_replacement_map: &HashMap<String, Box<SourceLanguageExpression>>,
 ) -> Box<SourceLanguageExpression> {
   match *expression {
     SourceLanguageExpression::LiteralExpression {
@@ -36,11 +36,7 @@ fn replace_variable_in_expression(
           identifier: (*new_name).clone(),
         }),
       },
-      Some(new_name) => Box::new(SourceLanguageExpression::VariableExpression {
-        line_number,
-        static_type,
-        identifier: (*new_name).clone(),
-      }),
+      Some(replacement) => (*replacement).clone(),
     },
     SourceLanguageExpression::NotExpression {
       line_number,
@@ -200,7 +196,14 @@ pub fn normalize_variable_names(program: Box<SourceLanguageProgram>) -> Box<Sour
 
     let mut expression_replacement_map = HashMap::new();
     for (name, _) in function_arguments {
-      expression_replacement_map.insert((*name).clone(), format!("{:}__{:}", identifier, name));
+      expression_replacement_map.insert(
+        (*name).clone(),
+        Box::new(SourceLanguageExpression::VariableExpression {
+          line_number: *line_number,
+          static_type: ExpressionStaticType::VoidType,
+          identifier: format!("{:}__{:}", identifier, name),
+        }),
+      );
     }
 
     normalized_functions.push(SourceLanguageFunctionDefinition {
