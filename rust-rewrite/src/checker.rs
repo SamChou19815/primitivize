@@ -393,27 +393,43 @@ fn type_check_program(
     function_definitions,
   } = &*program;
 
+  let mut type_errors = Vec::new();
   let mut mutable_global_values_environment = HashSet::new();
   let mut mutable_patched_functions_environment = functions_environment;
 
   for global_variable in global_variable_definitions {
-    mutable_global_values_environment =
-      mutable_global_values_environment.update(global_variable.identifier.clone());
+    let name = global_variable.identifier.clone();
+    if mutable_global_values_environment.contains(&name) {
+      type_errors.push(format!(
+        "Line {:}: Duplicate identifier: `{:}`",
+        global_variable.line_number, name
+      ))
+    }
+    mutable_global_values_environment = mutable_global_values_environment.update(name);
   }
   for function_definition in function_definitions {
     let SourceLanguageFunctionDefinition {
-      line_number: _,
+      line_number,
       identifier,
       function_arguments,
       return_type,
       body: _,
     } = &*function_definition;
+
+    let name = (*identifier).clone();
+    if mutable_patched_functions_environment.contains_key(&name) {
+      type_errors.push(format!(
+        "Line {:}: Duplicate function: `{:}`",
+        line_number, name
+      ))
+    }
+
     let function_type = FunctionType {
       argument_types: function_arguments.iter().map(|(_, t)| *t).collect(),
       return_type: *return_type,
     };
     mutable_patched_functions_environment =
-      mutable_patched_functions_environment.update((*identifier).clone(), function_type);
+      mutable_patched_functions_environment.update(name, function_type);
   }
 
   let global_values_environment = mutable_global_values_environment;
@@ -421,7 +437,6 @@ fn type_check_program(
 
   let mut checked_global_variables = Vec::new();
   let mut checked_functions = Vec::new();
-  let mut type_errors = Vec::new();
 
   for global_variable in global_variable_definitions {
     let SourceLanguageMutableGlobalVariableDefinition {
@@ -448,7 +463,14 @@ fn type_check_program(
 
     let mut readable_values_environment = global_values_environment.clone();
     for (parameter_name, _) in function_arguments {
-      readable_values_environment = readable_values_environment.update((*parameter_name).clone());
+      let name = (*parameter_name).clone();
+      if readable_values_environment.contains(&name) {
+        type_errors.push(format!(
+          "Line {:}: Duplicate function: `{:}`",
+          line_number, name
+        ))
+      }
+      readable_values_environment = readable_values_environment.update(name);
     }
     checked_functions.push(SourceLanguageFunctionDefinition {
       line_number: *line_number,
