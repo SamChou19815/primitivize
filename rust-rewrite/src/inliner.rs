@@ -2,6 +2,7 @@ use crate::ast::{
   ExpressionStaticType, FullyInlinedProgram, LiteralValue, SourceLanguageExpression,
   SourceLanguageFunctionDefinition, SourceLanguageProgram,
 };
+use crate::evaluator::compile_time_evaluation;
 use crate::renamer::replace_variable_in_expression;
 use std::collections::HashMap;
 
@@ -48,7 +49,10 @@ fn inline_function(
           line_number,
           static_type,
           function_name,
-          function_arguments,
+          function_arguments: function_arguments
+            .iter()
+            .map(|e| inline_function((*e).clone(), function_to_inline))
+            .collect(),
         })
       } else {
         let mut replacement_map = HashMap::new();
@@ -232,7 +236,7 @@ fn stub_function_call(
   }
 }
 
-pub fn function_self_inline(
+fn function_self_inline(
   function: &SourceLanguageFunctionDefinition,
   depth: usize,
 ) -> SourceLanguageFunctionDefinition {
@@ -264,16 +268,22 @@ pub fn function_self_inline(
     identifier: function.identifier.clone(),
     function_arguments: function.function_arguments.clone(),
     return_type: function.return_type,
-    body,
+    body: compile_time_evaluation(body),
   }
 }
 
-pub fn program_inline(program: Box<SourceLanguageProgram>) -> Box<FullyInlinedProgram> {
+pub fn program_inline(
+  program: Box<SourceLanguageProgram>,
+  inline_depth: usize,
+) -> Box<FullyInlinedProgram> {
   let functions = program.function_definitions;
   let mut main_expression = functions[functions.len() - 1].body.clone();
 
   for i in (0..(functions.len() - 1)).rev() {
-    main_expression = inline_function(main_expression, &functions[i])
+    main_expression = compile_time_evaluation(inline_function(
+      main_expression,
+      &function_self_inline(&functions[i], inline_depth),
+    ));
   }
 
   Box::new(FullyInlinedProgram {

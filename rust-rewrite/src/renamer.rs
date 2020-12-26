@@ -1,8 +1,4 @@
-use crate::ast::{
-  ExpressionStaticType, SourceLanguageExpression, SourceLanguageFunctionDefinition,
-  SourceLanguageProgram,
-};
-use crate::inliner::function_self_inline;
+use crate::ast::SourceLanguageExpression;
 use std::collections::HashMap;
 
 pub fn replace_variable_in_expression(
@@ -119,54 +115,4 @@ pub fn replace_variable_in_expression(
       })
     }
   }
-}
-
-pub fn prefix_variable_names(
-  program: Box<SourceLanguageProgram>,
-  inline_depth: usize,
-) -> Box<SourceLanguageProgram> {
-  let SourceLanguageProgram {
-    global_variable_definitions,
-    function_definitions,
-  } = &*program;
-
-  let mut normalized_functions = Vec::new();
-
-  for function_definition in function_definitions {
-    let SourceLanguageFunctionDefinition {
-      line_number,
-      identifier,
-      function_arguments,
-      return_type,
-      body,
-    } = &*function_definition;
-
-    let mut expression_replacement_map = HashMap::new();
-    for (name, _) in function_arguments {
-      expression_replacement_map.insert(
-        (*name).clone(),
-        Box::new(SourceLanguageExpression::VariableExpression {
-          line_number: *line_number,
-          static_type: ExpressionStaticType::VoidType,
-          identifier: format!("{:}__{:}", identifier, name),
-        }),
-      );
-    }
-
-    normalized_functions.push(function_self_inline(
-      &SourceLanguageFunctionDefinition {
-        line_number: *line_number,
-        identifier: (*identifier).clone(),
-        function_arguments: (*function_arguments).clone(),
-        return_type: *return_type,
-        body: replace_variable_in_expression((*body).clone(), &expression_replacement_map),
-      },
-      inline_depth,
-    ))
-  }
-
-  Box::new(SourceLanguageProgram {
-    global_variable_definitions: (*global_variable_definitions).clone(),
-    function_definitions: normalized_functions,
-  })
 }

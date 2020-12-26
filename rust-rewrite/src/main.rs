@@ -2,13 +2,15 @@ mod ast;
 #[rustfmt::skip]
 mod pl;
 mod checker;
+mod evaluator;
 mod inliner;
 mod renamer;
-mod transform;
 use im::HashMap;
 
 fn main() {
-  let program = "var a = 4; fun b(v: int): int = v fun main(): void = print(b(38) + a)".to_string();
+  let program =
+    "var a = 4; fun b(v: int): int = v fun main(): void = if true then print(b(37) + 1 + a) else ({})"
+      .to_string();
   match checker::get_type_checked_program(
     HashMap::new().update(
       "print".to_string(),
@@ -20,8 +22,8 @@ fn main() {
     program,
   ) {
     Ok(p) => {
-      println!("Original: {:?}", p);
-      println!("Lowered: {:?}", transform::lower_program(p, 20));
+      println!("Original: {:?}\n\n", p);
+      println!("Lowered: {:?}", inliner::program_inline(p, 20));
     }
     Err(e) => {
       println!("Errors: {:?}", e);

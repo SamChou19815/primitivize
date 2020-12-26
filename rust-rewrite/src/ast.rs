@@ -6,7 +6,7 @@ pub enum LiteralValue {
   BoolLiteral(bool),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize)]
 pub enum BinaryOperator {
   MUL,
   DIV,
