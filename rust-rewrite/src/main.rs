@@ -2,6 +2,7 @@ mod ast;
 #[rustfmt::skip]
 mod pl;
 mod checker;
+mod inliner;
 mod renamer;
 mod transform;
 use im::HashMap;

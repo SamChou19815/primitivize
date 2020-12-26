@@ -407,30 +407,6 @@ fn type_check_program(
     }
     mutable_global_values_environment = mutable_global_values_environment.update(name);
   }
-  for function_definition in function_definitions {
-    let SourceLanguageFunctionDefinition {
-      line_number,
-      identifier,
-      function_arguments,
-      return_type,
-      body: _,
-    } = &*function_definition;
-
-    let name = (*identifier).clone();
-    if mutable_patched_functions_environment.contains_key(&name) {
-      type_errors.push(format!(
-        "Line {:}: Duplicate function: `{:}`",
-        line_number, name
-      ))
-    }
-
-    let function_type = FunctionType {
-      argument_types: function_arguments.iter().map(|(_, t)| *t).collect(),
-      return_type: *return_type,
-    };
-    mutable_patched_functions_environment =
-      mutable_patched_functions_environment.update(name, function_type);
-  }
 
   let global_values_environment = mutable_global_values_environment;
 
