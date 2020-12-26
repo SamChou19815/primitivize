@@ -2,11 +2,12 @@ mod ast;
 #[rustfmt::skip]
 mod pl;
 mod checker;
+mod renamer;
 mod transform;
 use im::HashMap;
 
 fn main() {
-  let program = "fun main(): int = 32 + 10".to_string();
+  let program = "var a = 4; fun b(v: int): int = v fun main(): int = b(38) + a".to_string();
   match checker::get_type_checked_program(HashMap::new(), program) {
     Ok(p) => {
       println!("Original: {:?}", p);

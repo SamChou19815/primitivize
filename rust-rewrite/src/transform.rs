@@ -3,6 +3,7 @@ use crate::ast::{
   IRProgram, IRStatement, LiteralValue, SourceLanguageExpression, SourceLanguageFunctionDefinition,
   SourceLanguageMutableGlobalVariableDefinition, SourceLanguageProgram,
 };
+use crate::renamer::normalize_variable_names;
 
 const DUMMY_ZERO: IRExpression = IRExpression::LiteralExpression(LiteralValue::IntLiteral(0));
 
@@ -132,7 +133,7 @@ pub fn lower_program(program: Box<SourceLanguageProgram>) -> Box<IRProgram> {
   let SourceLanguageProgram {
     global_variable_definitions,
     function_definitions,
-  } = &*program;
+  } = &*normalize_variable_names(program);
 
   let mut lowered_global_variable_definitions = Vec::new();
   for global_variable in global_variable_definitions {
