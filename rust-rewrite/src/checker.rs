@@ -433,7 +433,6 @@ fn type_check_program(
   }
 
   let global_values_environment = mutable_global_values_environment;
-  let patched_functions_environment = mutable_patched_functions_environment;
 
   let mut checked_global_variables = Vec::new();
   let mut checked_functions = Vec::new();
@@ -461,6 +460,21 @@ fn type_check_program(
       body,
     } = &*function_definition;
 
+    let name = (*identifier).clone();
+    if mutable_patched_functions_environment.contains_key(&name) {
+      type_errors.push(format!(
+        "Line {:}: Duplicate function: `{:}`",
+        line_number, name
+      ))
+    }
+
+    let function_type = FunctionType {
+      argument_types: function_arguments.iter().map(|(_, t)| *t).collect(),
+      return_type: *return_type,
+    };
+    mutable_patched_functions_environment =
+      mutable_patched_functions_environment.update(name, function_type);
+
     let mut readable_values_environment = global_values_environment.clone();
     for (parameter_name, _) in function_arguments {
       let name = (*parameter_name).clone();
@@ -478,7 +492,7 @@ fn type_check_program(
       function_arguments: (*function_arguments).clone(),
       return_type: *return_type,
       body: type_check_expression(
-        &patched_functions_environment,
+        &mutable_patched_functions_environment,
         &readable_values_environment,
         &global_values_environment,
         *return_type,
