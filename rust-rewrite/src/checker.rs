@@ -478,6 +478,14 @@ fn type_check_program(
     })
   }
 
+  let last_function = &checked_functions[checked_functions.len() - 1];
+  if last_function.identifier != "main" || last_function.function_arguments.len() > 0 {
+    type_errors.push(format!(
+      "Line {:}: Missing main function with void return type at the end. We only have {:}.",
+      last_function.line_number, last_function.identifier,
+    ));
+  }
+
   let checked_program = Box::new(SourceLanguageProgram {
     global_variable_definitions: checked_global_variables,
     function_definitions: checked_functions,

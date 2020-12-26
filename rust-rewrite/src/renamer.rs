@@ -2,6 +2,7 @@ use crate::ast::{
   ExpressionStaticType, SourceLanguageExpression, SourceLanguageFunctionDefinition,
   SourceLanguageProgram,
 };
+use crate::inliner::function_self_inline;
 use std::collections::HashMap;
 
 pub fn replace_variable_in_expression(
@@ -120,7 +121,10 @@ pub fn replace_variable_in_expression(
   }
 }
 
-pub fn prefix_variable_names(program: Box<SourceLanguageProgram>) -> Box<SourceLanguageProgram> {
+pub fn prefix_variable_names(
+  program: Box<SourceLanguageProgram>,
+  inline_depth: usize,
+) -> Box<SourceLanguageProgram> {
   let SourceLanguageProgram {
     global_variable_definitions,
     function_definitions,
@@ -149,13 +153,16 @@ pub fn prefix_variable_names(program: Box<SourceLanguageProgram>) -> Box<SourceL
       );
     }
 
-    normalized_functions.push(SourceLanguageFunctionDefinition {
-      line_number: *line_number,
-      identifier: (*identifier).clone(),
-      function_arguments: (*function_arguments).clone(),
-      return_type: *return_type,
-      body: replace_variable_in_expression((*body).clone(), &expression_replacement_map),
-    })
+    normalized_functions.push(function_self_inline(
+      &SourceLanguageFunctionDefinition {
+        line_number: *line_number,
+        identifier: (*identifier).clone(),
+        function_arguments: (*function_arguments).clone(),
+        return_type: *return_type,
+        body: replace_variable_in_expression((*body).clone(), &expression_replacement_map),
+      },
+      inline_depth,
+    ))
   }
 
   Box::new(SourceLanguageProgram {

@@ -117,50 +117,7 @@ pub struct SourceLanguageProgram {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub enum IRExpression {
-  LiteralExpression(LiteralValue),
-  VariableExpression(String),
-  NotExpression(Box<IRExpression>),
-  FunctionCallExpression {
-    function_name: String,
-    function_arguments: Vec<Box<IRExpression>>,
-  },
-  BinaryExpression {
-    operator: BinaryOperator,
-    e1: Box<IRExpression>,
-    e2: Box<IRExpression>,
-  },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub enum IRStatement {
-  AssignmentStatement {
-    identifier: String,
-    assigned_expression: Box<IRExpression>,
-  },
-  IfElseStatement {
-    condition: Box<IRExpression>,
-    s1: Vec<Box<IRStatement>>,
-    s2: Vec<Box<IRStatement>>,
-  },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub struct IRMutableGlobalVariableDefinition {
-  pub identifier: String,
-  pub assigned_value: i32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub struct IRFunctionDefinition {
-  pub identifier: String,
-  pub function_arguments: Vec<String>,
-  pub body_statements: Vec<Box<IRStatement>>,
-  pub body_final_expression: Option<Box<IRExpression>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub struct IRProgram {
-  pub global_variable_definitions: Vec<IRMutableGlobalVariableDefinition>,
-  pub function_definitions: Vec<IRFunctionDefinition>,
+pub struct FullyInlinedProgram {
+  pub global_variable_definitions: Vec<SourceLanguageMutableGlobalVariableDefinition>,
+  pub body: Box<SourceLanguageExpression>,
 }
