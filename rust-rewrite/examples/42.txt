@@ -1,0 +1,9 @@
+var a = 4;
+
+fun b(v: int): int = v
+
+fun main(): void =
+  if true then
+    serve(b(37) + 1 + a)
+  else
+    ({})
