@@ -117,7 +117,13 @@ pub struct SourceLanguageProgram {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct IfElseBlock {
+  pub condition: SourceLanguageExpression,
+  pub action: SourceLanguageExpression,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct FullyInlinedProgram {
   pub global_variable_definitions: Vec<SourceLanguageMutableGlobalVariableDefinition>,
-  pub body: Box<SourceLanguageExpression>,
+  pub if_else_blocks: Vec<IfElseBlock>,
 }

@@ -1,6 +1,8 @@
-use crate::ast::{BinaryOperator, ExpressionStaticType, SourceLanguageExpression};
+use crate::ast::{
+  BinaryOperator, ExpressionStaticType, IfElseBlock, LiteralValue, SourceLanguageExpression,
+};
 
-pub fn hoist_if_else(expression: Box<SourceLanguageExpression>) -> Box<SourceLanguageExpression> {
+fn hoist_if_else(expression: Box<SourceLanguageExpression>) -> Box<SourceLanguageExpression> {
   let cloned = (*expression).clone();
   match cloned {
     SourceLanguageExpression::LiteralExpression {
@@ -372,5 +374,47 @@ pub fn hoist_if_else(expression: Box<SourceLanguageExpression>) -> Box<SourceLan
         }
       }
     }
+  }
+}
+
+pub fn transform_to_if_else_blocks(expression: Box<SourceLanguageExpression>) -> Vec<IfElseBlock> {
+  match *hoist_if_else(expression) {
+    SourceLanguageExpression::IfElseExpression {
+      line_number: _,
+      static_type: _,
+      condition,
+      e1,
+      e2,
+    } => {
+      let e1_list = transform_to_if_else_blocks(e1);
+      let mut e2_list = transform_to_if_else_blocks(e2).clone();
+      let mut list = Vec::new();
+      for IfElseBlock {
+        condition: c,
+        action,
+      } in e1_list
+      {
+        list.push(IfElseBlock {
+          condition: SourceLanguageExpression::BinaryExpression {
+            line_number: 1,
+            static_type: ExpressionStaticType::BoolType,
+            operator: BinaryOperator::AND,
+            e1: condition.clone(),
+            e2: Box::new(c),
+          },
+          action,
+        });
+      }
+      list.append(&mut e2_list);
+      list
+    }
+    hoisted => vec![IfElseBlock {
+      condition: SourceLanguageExpression::LiteralExpression {
+        line_number: 1,
+        static_type: ExpressionStaticType::BoolType,
+        literal: LiteralValue::BoolLiteral(true),
+      },
+      action: hoisted,
+    }],
   }
 }
