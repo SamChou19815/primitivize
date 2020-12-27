@@ -23,9 +23,9 @@ pub fn get_critter_world_runtime() -> HashMap<String, FunctionType> {
     String::from("mate") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::VoidType },
     String::from("serve") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::VoidType },
 
-    String::from("nearby") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
-    String::from("ahead") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
-    String::from("random") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
+    String::from("nearby") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::IntType },
+    String::from("ahead") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::IntType },
+    String::from("random") => FunctionType { argument_types: vec![ExpressionStaticType::IntType], return_type: ExpressionStaticType::IntType },
     String::from("smell") => FunctionType { argument_types: vec![], return_type: ExpressionStaticType::IntType },
   }
 }
