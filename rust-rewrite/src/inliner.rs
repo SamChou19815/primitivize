@@ -4,6 +4,7 @@ use crate::ast::{
 };
 use crate::evaluator::compile_time_evaluation;
 use crate::renamer::replace_variable_in_expression;
+use crate::transformer::hoist_if_else;
 use std::collections::HashMap;
 
 fn inline_function(
@@ -288,6 +289,6 @@ pub fn program_inline(
 
   Box::new(FullyInlinedProgram {
     global_variable_definitions: program.global_variable_definitions,
-    body: main_expression,
+    body: hoist_if_else(main_expression),
   })
 }

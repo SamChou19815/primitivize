@@ -5,6 +5,7 @@ mod checker;
 mod evaluator;
 mod inliner;
 mod renamer;
+mod transformer;
 use im::HashMap;
 
 fn main() {
