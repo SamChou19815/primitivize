@@ -6,12 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Gradle Build
-        run: gradle build
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -20,9 +14,9 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            rust-rewrite/target
+            target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Cargo Build
-        run: cd rust-rewrite && cargo build
+        run: cargo build
       - name: Cargo Format
-        run: cd rust-rewrite && cargo fmt -- --check
+        run: cargo fmt -- --check
