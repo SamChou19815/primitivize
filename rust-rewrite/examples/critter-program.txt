@@ -1,0 +1,71 @@
+var needHalt = 0;
+var setTapeContentAndMoveStage = 0;
+var valueToSet = 0;
+var moveDir = 0;
+
+var dir = 1;
+var carry = 1;
+
+fun doesNeedHalt(): bool = needHalt != 0
+fun getTapeContent(): int = nearby(dir)
+
+fun setTapeContentAndMove(
+    v: int, d: int, haltNow: bool,
+    beforeSetTapeContent: void
+): void =
+  if haltNow then (
+    needHalt = 1
+  ) else if (setTapeContentAndMoveStage == 0) then ({
+    setTapeContentAndMoveStage = 1;
+    valueToSet = v; moveDir = d
+  }) else if (setTapeContentAndMoveStage == 1) then ({
+    setTapeContentAndMoveStage = 2;
+    dir = 0;
+    right()
+  }) else if (setTapeContentAndMoveStage == 2 && valueToSet == 0 && ahead(1) == 0) then ({
+    setTapeContentAndMoveStage = 3;
+    beforeSetTapeContent;
+    wait()
+  }) else if (setTapeContentAndMoveStage == 2 && valueToSet == 1 && ahead(1) == 0) then ({
+    setTapeContentAndMoveStage = 3;
+    beforeSetTapeContent;
+    serve(1)
+  }) else if (setTapeContentAndMoveStage == 2 && valueToSet == 0 && ahead(1) == 0-2) then ({
+    setTapeContentAndMoveStage = 3;
+    beforeSetTapeContent;
+    eat()
+  }) else if (setTapeContentAndMoveStage == 2 && valueToSet == 1 && ahead(1) == 0-2) then ({
+    setTapeContentAndMoveStage = 3;
+    beforeSetTapeContent;
+    wait()
+  }) else if (setTapeContentAndMoveStage == 3) then ({
+    setTapeContentAndMoveStage = 4;
+    dir = 1;
+    left()
+  }) else if (setTapeContentAndMoveStage == 4 && moveDir == 0 - 1) then ({
+    setTapeContentAndMoveStage = 0;
+    backward()
+  }) else if (setTapeContentAndMoveStage == 4 && moveDir == 0) then ({
+    setTapeContentAndMoveStage = 0;
+    wait()
+  }) else if (setTapeContentAndMoveStage == 4 && moveDir == 1) then ({
+    setTapeContentAndMoveStage = 0;
+    forward()
+  }) else (
+    wait()
+  )
+
+fun main(): void =
+  if doesNeedHalt() then (
+    wait()
+  ) else if (ahead(1) == 0-1) then (
+    needHalt = 1
+  ) else if getTapeContent() == 0 && carry == 0 then (
+    setTapeContentAndMove(0, 1, false, carry = 0)
+  ) else if getTapeContent() == 0 && carry == 1 then (
+    setTapeContentAndMove(1, 1, false, carry = 0)
+  ) else if getTapeContent() == 0-2 && carry == 0 then (
+    setTapeContentAndMove(1, 1, false, carry = 0)
+  ) else if getTapeContent() == 0-2 && carry == 1 then (
+    setTapeContentAndMove(0, 1, false, carry = 1)
+  ) else wait()

@@ -25,7 +25,7 @@ fn check_type(
 
 fn type_check_expression(
   functions_environment: &HashMap<String, FunctionType>,
-  readable_values_environment: &HashSet<String>,
+  readable_values_environment: &HashMap<String, ExpressionStaticType>,
   global_values_environment: &HashSet<String>,
   expected_type: ExpressionStaticType,
   type_errors: &mut Vec<String>,
@@ -67,19 +67,16 @@ fn type_check_expression(
     } => Box::new(SourceLanguageExpression::VariableExpression {
       line_number,
       static_type: {
-        check_type(
-          line_number,
-          type_errors,
-          expected_type,
-          ExpressionStaticType::IntType,
-        );
-        if !(*readable_values_environment).contains(&identifier) {
-          type_errors.push(format!(
-            "Line {:}: Undefined variable `{:}`.",
-            line_number, identifier
-          ));
+        match (*readable_values_environment).get(&identifier) {
+          Some(&actual_type) => check_type(line_number, type_errors, expected_type, actual_type),
+          None => {
+            type_errors.push(format!(
+              "Line {:}: Undefined variable `{:}`.",
+              line_number, identifier
+            ));
+            ExpressionStaticType::IntType
+          }
         }
-        ExpressionStaticType::IntType
       },
       identifier,
     }),
@@ -271,12 +268,7 @@ fn type_check_expression(
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
       line_number,
-      static_type: check_type(
-        line_number,
-        type_errors,
-        expected_type,
-        ExpressionStaticType::VoidType,
-      ),
+      static_type: expected_type,
       condition: type_check_expression(
         functions_environment,
         readable_values_environment,
@@ -289,7 +281,7 @@ fn type_check_expression(
         functions_environment,
         readable_values_environment,
         global_values_environment,
-        ExpressionStaticType::VoidType,
+        expected_type,
         type_errors,
         e1,
       ),
@@ -297,7 +289,7 @@ fn type_check_expression(
         functions_environment,
         readable_values_environment,
         global_values_environment,
-        ExpressionStaticType::VoidType,
+        expected_type,
         type_errors,
         e2,
       ),
@@ -430,16 +422,20 @@ fn type_check_program(
     mutable_patched_functions_environment =
       mutable_patched_functions_environment.update(name, function_type);
 
-    let mut readable_values_environment = global_values_environment.clone();
-    for (parameter_name, _) in function_arguments {
+    let mut readable_values_environment = HashMap::new();
+    for v in global_values_environment.iter() {
+      readable_values_environment =
+        readable_values_environment.update((*v).clone(), ExpressionStaticType::IntType);
+    }
+    for (parameter_name, parameter_type) in function_arguments {
       let name = (*parameter_name).clone();
-      if readable_values_environment.contains(&name) {
+      if readable_values_environment.contains_key(&name) {
         type_errors.push(format!(
           "Line {:}: Duplicate function: `{:}`",
           line_number, name
         ))
       }
-      readable_values_environment = readable_values_environment.update(name);
+      readable_values_environment = readable_values_environment.update(name, *parameter_type);
     }
     checked_functions.push(SourceLanguageFunctionDefinition {
       line_number: *line_number,

@@ -21,8 +21,11 @@ fn main() {
     Ok(program) => {
       println!("{:}", compiler::compile_to_critter_lang(program, 20));
     }
-    Err(e) => {
-      println!("Errors: {:?}", e);
+    Err(errors) => {
+      println!("Errors:");
+      for e in errors {
+        println!("{:}", e);
+      }
     }
   }
 }
