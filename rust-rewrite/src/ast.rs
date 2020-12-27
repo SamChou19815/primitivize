@@ -56,11 +56,6 @@ pub enum SourceLanguageExpression {
     static_type: ExpressionStaticType,
     identifier: String,
   },
-  NotExpression {
-    line_number: usize,
-    static_type: ExpressionStaticType,
-    sub_expression: Box<SourceLanguageExpression>,
-  },
   FunctionCallExpression {
     line_number: usize,
     static_type: ExpressionStaticType,

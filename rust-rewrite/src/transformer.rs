@@ -23,34 +23,6 @@ fn hoist_if_else(expression: Box<SourceLanguageExpression>) -> Box<SourceLanguag
       static_type,
       identifier,
     }),
-    SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression,
-    } => match *hoist_if_else(sub_expression) {
-      SourceLanguageExpression::IfElseExpression {
-        line_number: _,
-        static_type: _,
-        condition,
-        e1,
-        e2,
-      } => Box::new(SourceLanguageExpression::IfElseExpression {
-        line_number,
-        static_type,
-        condition,
-        e1: hoist_if_else(Box::new(SourceLanguageExpression::NotExpression {
-          line_number,
-          static_type,
-          sub_expression: e1,
-        })),
-        e2: hoist_if_else(Box::new(SourceLanguageExpression::NotExpression {
-          line_number,
-          static_type,
-          sub_expression: e2,
-        })),
-      }),
-      _ => expression,
-    },
     SourceLanguageExpression::FunctionCallExpression {
       line_number: _,
       static_type: _,

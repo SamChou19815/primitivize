@@ -22,26 +22,6 @@ pub fn compile_time_evaluation(
       static_type,
       identifier,
     }),
-    SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression,
-    } => match *compile_time_evaluation(sub_expression) {
-      SourceLanguageExpression::LiteralExpression {
-        line_number,
-        static_type,
-        literal: LiteralValue::BoolLiteral(b),
-      } => Box::new(SourceLanguageExpression::LiteralExpression {
-        line_number,
-        static_type,
-        literal: LiteralValue::BoolLiteral(!b),
-      }),
-      evaluated => Box::new(SourceLanguageExpression::NotExpression {
-        line_number,
-        static_type,
-        sub_expression: Box::new(evaluated),
-      }),
-    },
     SourceLanguageExpression::FunctionCallExpression {
       line_number,
       static_type,

@@ -30,15 +30,6 @@ fn inline_function(
       static_type,
       identifier,
     }),
-    SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression,
-    } => Box::new(SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression: inline_function(sub_expression, function_to_inline),
-    }),
     SourceLanguageExpression::FunctionCallExpression {
       line_number,
       static_type,
@@ -147,15 +138,6 @@ fn stub_function_call(
       line_number,
       static_type,
       identifier,
-    }),
-    SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression,
-    } => Box::new(SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression: stub_function_call(sub_expression, function_name_to_stub, default_expression),
     }),
     SourceLanguageExpression::FunctionCallExpression {
       line_number,

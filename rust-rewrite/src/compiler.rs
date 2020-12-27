@@ -28,11 +28,6 @@ fn pretty_print(
       "mem[{:}]",
       *variable_replacement_map.get(&identifier).unwrap()
     )),
-    SourceLanguageExpression::NotExpression {
-      line_number: _,
-      static_type: _,
-      sub_expression: _,
-    } => panic!("unsupported"),
     SourceLanguageExpression::FunctionCallExpression {
       line_number: _,
       static_type,

@@ -27,15 +27,6 @@ pub fn replace_variable_in_expression(
       }),
       Some(replacement) => (*replacement).clone(),
     },
-    SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression,
-    } => Box::new(SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type,
-      sub_expression: replace_variable_in_expression(sub_expression, expression_replacement_map),
-    }),
     SourceLanguageExpression::FunctionCallExpression {
       line_number,
       static_type,

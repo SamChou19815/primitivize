@@ -83,27 +83,6 @@ fn type_check_expression(
       },
       identifier,
     }),
-    SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type: _,
-      sub_expression,
-    } => Box::new(SourceLanguageExpression::NotExpression {
-      line_number,
-      static_type: check_type(
-        line_number,
-        type_errors,
-        expected_type,
-        ExpressionStaticType::BoolType,
-      ),
-      sub_expression: type_check_expression(
-        functions_environment,
-        readable_values_environment,
-        global_values_environment,
-        ExpressionStaticType::BoolType,
-        type_errors,
-        sub_expression,
-      ),
-    }),
     SourceLanguageExpression::FunctionCallExpression {
       line_number,
       static_type,

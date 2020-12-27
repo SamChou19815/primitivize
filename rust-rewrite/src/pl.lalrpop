@@ -63,15 +63,6 @@ SimpleExpression : Box<SourceLanguageExpression> = {
   "(" <e: SourceLanguageExpression> ")" => e,
 }
 
-NotExpression : Box<SourceLanguageExpression> = {
-  <l:@L> "!" <sub_expression: NotExpression> => Box::new(SourceLanguageExpression::NotExpression {
-    line_number: l,
-    static_type: ExpressionStaticType::VoidType,
-    sub_expression,
-  }),
-  SimpleExpression,
-}
-
 FunctionCallExpression : Box<SourceLanguageExpression> = {
   <l:@L> <function_name: Identifier> "("
   <function_arguments: Comma<SourceLanguageExpression>>
@@ -81,7 +72,7 @@ FunctionCallExpression : Box<SourceLanguageExpression> = {
     function_name,
     function_arguments,
   }),
-  NotExpression,
+  SimpleExpression,
 }
 
 FactorOp: BinaryOperator = {
