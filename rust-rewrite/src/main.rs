@@ -2,6 +2,7 @@ mod ast;
 #[rustfmt::skip]
 mod pl;
 mod checker;
+mod compiler;
 mod evaluator;
 mod inliner;
 mod renamer;
@@ -14,8 +15,7 @@ fn main() {
       .to_string();
   match checker::get_type_checked_program(runtime::get_critter_world_runtime(), program) {
     Ok(p) => {
-      println!("Original: {:?}\n\n", p);
-      println!("Lowered: {:?}", inliner::program_inline(p, 20));
+      println!("{:}", compiler::compile_to_critter_lang(p, 20));
     }
     Err(e) => {
       println!("Errors: {:?}", e);
