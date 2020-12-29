@@ -19,7 +19,7 @@ fn main() {
   }
   match checker::get_type_checked_program(runtime::get_critter_world_runtime(), program_buffer) {
     Ok(program) => {
-      println!("{:}", compiler::compile_to_critter_lang(program, 20));
+      println!("{:}", compiler::compile_to_critter_lang(&program, 20));
     }
     Err(errors) => {
       println!("Errors:");

@@ -147,7 +147,7 @@ fn pretty_print(
   }
 }
 
-pub fn compile_to_critter_lang(program: Box<SourceLanguageProgram>, inline_depth: usize) -> String {
+pub fn compile_to_critter_lang(program: &SourceLanguageProgram, inline_depth: usize) -> String {
   let FullyInlinedProgram {
     global_variable_definitions,
     if_else_blocks,

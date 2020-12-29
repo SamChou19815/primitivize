@@ -8,27 +8,27 @@ use crate::transformer::transform_to_if_else_blocks;
 use std::collections::HashMap;
 
 fn inline_function(
-  expression: Box<SourceLanguageExpression>,
+  expression: &SourceLanguageExpression,
   function_to_inline: &SourceLanguageFunctionDefinition,
 ) -> Box<SourceLanguageExpression> {
-  match *expression {
+  match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number,
       static_type,
       literal,
     } => Box::new(SourceLanguageExpression::LiteralExpression {
-      line_number,
-      static_type,
-      literal,
+      line_number: *line_number,
+      static_type: *static_type,
+      literal: *literal,
     }),
     SourceLanguageExpression::VariableExpression {
       line_number,
       static_type,
       identifier,
     } => Box::new(SourceLanguageExpression::VariableExpression {
-      line_number,
-      static_type,
-      identifier,
+      line_number: *line_number,
+      static_type: *static_type,
+      identifier: (*identifier).clone(),
     }),
     SourceLanguageExpression::FunctionCallExpression {
       line_number,
@@ -36,14 +36,14 @@ fn inline_function(
       function_name,
       function_arguments,
     } => {
-      if function_name != function_to_inline.identifier {
+      if *function_name != function_to_inline.identifier {
         Box::new(SourceLanguageExpression::FunctionCallExpression {
-          line_number,
-          static_type,
-          function_name,
+          line_number: *line_number,
+          static_type: *static_type,
+          function_name: (*function_name).clone(),
           function_arguments: function_arguments
             .iter()
-            .map(|e| inline_function((*e).clone(), function_to_inline))
+            .map(|e| inline_function(e, function_to_inline))
             .collect(),
         })
       } else {
@@ -55,9 +55,9 @@ fn inline_function(
           .zip(function_arguments.into_iter())
         {
           let (name, _) = parameter;
-          replacement_map.insert(name, argument_expression);
+          replacement_map.insert(name, (*argument_expression).clone());
         }
-        replace_variable_in_expression(function_to_inline.body.clone(), &replacement_map)
+        replace_variable_in_expression(&function_to_inline.body, &replacement_map)
       }
     }
     SourceLanguageExpression::BinaryExpression {
@@ -67,9 +67,9 @@ fn inline_function(
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::BinaryExpression {
-      line_number,
-      static_type,
-      operator,
+      line_number: *line_number,
+      static_type: *static_type,
+      operator: *operator,
       e1: inline_function(e1, function_to_inline),
       e2: inline_function(e2, function_to_inline),
     }),
@@ -80,8 +80,8 @@ fn inline_function(
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
-      line_number,
-      static_type,
+      line_number: *line_number,
+      static_type: *static_type,
       condition: inline_function(condition, function_to_inline),
       e1: inline_function(e1, function_to_inline),
       e2: inline_function(e2, function_to_inline),
@@ -92,9 +92,9 @@ fn inline_function(
       identifier,
       assigned_expression,
     } => Box::new(SourceLanguageExpression::AssignmentExpression {
-      line_number,
-      static_type,
-      identifier,
+      line_number: *line_number,
+      static_type: *static_type,
+      identifier: (*identifier).clone(),
       assigned_expression: inline_function(assigned_expression, function_to_inline),
     }),
     SourceLanguageExpression::ChainExpression {
@@ -107,8 +107,8 @@ fn inline_function(
         replaced_expressions.push(inline_function(sub_expression, function_to_inline));
       }
       Box::new(SourceLanguageExpression::ChainExpression {
-        line_number,
-        static_type,
+        line_number: *line_number,
+        static_type: *static_type,
         expressions: replaced_expressions,
       })
     }
@@ -225,7 +225,7 @@ fn function_self_inline(
 ) -> SourceLanguageFunctionDefinition {
   let mut body = function.body.clone();
   for _ in 0..depth {
-    body = inline_function(body, function);
+    body = inline_function(&body, function);
   }
   let default_expression = match function.return_type {
     ExpressionStaticType::BoolType => SourceLanguageExpression::LiteralExpression {
@@ -256,21 +256,21 @@ fn function_self_inline(
 }
 
 pub fn program_inline(
-  program: Box<SourceLanguageProgram>,
+  program: &SourceLanguageProgram,
   inline_depth: usize,
 ) -> Box<FullyInlinedProgram> {
-  let functions = program.function_definitions;
+  let functions = &program.function_definitions;
   let mut main_expression = functions[functions.len() - 1].body.clone();
 
   for i in (0..(functions.len() - 1)).rev() {
     main_expression = compile_time_evaluation(inline_function(
-      main_expression,
+      &main_expression,
       &function_self_inline(&functions[i], inline_depth),
     ));
   }
 
   Box::new(FullyInlinedProgram {
-    global_variable_definitions: program.global_variable_definitions,
+    global_variable_definitions: program.global_variable_definitions.clone(),
     if_else_blocks: transform_to_if_else_blocks(main_expression),
   })
 }

@@ -29,46 +29,46 @@ fn type_check_expression(
   global_values_environment: &HashSet<String>,
   expected_type: ExpressionStaticType,
   type_errors: &mut Vec<String>,
-  expression: Box<SourceLanguageExpression>,
+  expression: &SourceLanguageExpression,
 ) -> Box<SourceLanguageExpression> {
-  match *expression {
-    SourceLanguageExpression::LiteralExpression {
+  match &expression {
+    &SourceLanguageExpression::LiteralExpression {
       line_number,
       static_type: _,
       literal: LiteralValue::IntLiteral(i),
     } => Box::new(SourceLanguageExpression::LiteralExpression {
-      line_number,
+      line_number: *line_number,
       static_type: check_type(
-        line_number,
+        *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::IntType,
       ),
-      literal: LiteralValue::IntLiteral(i),
+      literal: LiteralValue::IntLiteral(*i),
     }),
-    SourceLanguageExpression::LiteralExpression {
+    &SourceLanguageExpression::LiteralExpression {
       line_number,
       static_type: _,
       literal: LiteralValue::BoolLiteral(b),
     } => Box::new(SourceLanguageExpression::LiteralExpression {
-      line_number,
+      line_number: *line_number,
       static_type: check_type(
-        line_number,
+        *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::BoolType,
       ),
-      literal: LiteralValue::BoolLiteral(b),
+      literal: LiteralValue::BoolLiteral(*b),
     }),
-    SourceLanguageExpression::VariableExpression {
+    &SourceLanguageExpression::VariableExpression {
       line_number,
       static_type: _,
       identifier,
     } => Box::new(SourceLanguageExpression::VariableExpression {
-      line_number,
+      line_number: *line_number,
       static_type: {
-        match (*readable_values_environment).get(&identifier) {
-          Some(&actual_type) => check_type(line_number, type_errors, expected_type, actual_type),
+        match (*readable_values_environment).get(identifier) {
+          Some(&actual_type) => check_type(*line_number, type_errors, expected_type, actual_type),
           None => {
             type_errors.push(format!(
               "Line {:}: Undefined variable `{:}`.",
@@ -78,25 +78,25 @@ fn type_check_expression(
           }
         }
       },
-      identifier,
+      identifier: (*identifier).clone(),
     }),
-    SourceLanguageExpression::FunctionCallExpression {
+    &SourceLanguageExpression::FunctionCallExpression {
       line_number,
       static_type,
       function_name,
       function_arguments,
     } => {
-      match (*functions_environment).get(&function_name) {
+      match (*functions_environment).get(function_name) {
         None => {
           type_errors.push(format!(
             "Line {:}: Undefined function `{:}`.",
             line_number, function_name
           ));
           Box::new(SourceLanguageExpression::FunctionCallExpression {
-            line_number,
-            static_type,
-            function_name,
-            function_arguments,
+            line_number: *line_number,
+            static_type: *static_type,
+            function_name: (*function_name).clone(),
+            function_arguments: (*function_arguments).clone(),
           })
         }
         Some(function_type) => {
@@ -105,7 +105,7 @@ fn type_check_expression(
             return_type,
           } = &*function_type;
           // Check return type
-          check_type(line_number, type_errors, expected_type, *return_type);
+          check_type(*line_number, type_errors, expected_type, *return_type);
           // Check argument types
           let expected_argument_length = argument_types.len();
           let actual_argument_length = function_arguments.len();
@@ -126,19 +126,19 @@ fn type_check_expression(
               global_values_environment,
               *argument_type,
               type_errors,
-              argument_expression,
+              &*argument_expression,
             ));
           }
           Box::new(SourceLanguageExpression::FunctionCallExpression {
-            line_number,
+            line_number: *line_number,
             static_type: *return_type,
-            function_name,
+            function_name: (*function_name).clone(),
             function_arguments: checked_function_arguments,
           })
         }
       }
     }
-    SourceLanguageExpression::BinaryExpression {
+    &SourceLanguageExpression::BinaryExpression {
       line_number,
       static_type: _,
       operator,
@@ -150,21 +150,21 @@ fn type_check_expression(
       | BinaryOperator::MOD
       | BinaryOperator::PLUS
       | BinaryOperator::MINUS => Box::new(SourceLanguageExpression::BinaryExpression {
-        line_number,
+        line_number: *line_number,
         static_type: check_type(
-          line_number,
+          *line_number,
           type_errors,
           expected_type,
           ExpressionStaticType::IntType,
         ),
-        operator,
+        operator: *operator,
         e1: type_check_expression(
           functions_environment,
           readable_values_environment,
           global_values_environment,
           ExpressionStaticType::IntType,
           type_errors,
-          e1,
+          &*e1,
         ),
         e2: type_check_expression(
           functions_environment,
@@ -172,26 +172,26 @@ fn type_check_expression(
           global_values_environment,
           ExpressionStaticType::IntType,
           type_errors,
-          e2,
+          &*e2,
         ),
       }),
       BinaryOperator::LT | BinaryOperator::LE | BinaryOperator::GT | BinaryOperator::GE => {
         Box::new(SourceLanguageExpression::BinaryExpression {
-          line_number,
+          line_number: *line_number,
           static_type: check_type(
-            line_number,
+            *line_number,
             type_errors,
             expected_type,
             ExpressionStaticType::BoolType,
           ),
-          operator,
+          operator: *operator,
           e1: type_check_expression(
             functions_environment,
             readable_values_environment,
             global_values_environment,
             ExpressionStaticType::IntType,
             type_errors,
-            e1,
+            &*e1,
           ),
           e2: type_check_expression(
             functions_environment,
@@ -199,27 +199,27 @@ fn type_check_expression(
             global_values_environment,
             ExpressionStaticType::IntType,
             type_errors,
-            e2,
+            &*e2,
           ),
         })
       }
       BinaryOperator::AND | BinaryOperator::OR => {
         Box::new(SourceLanguageExpression::BinaryExpression {
-          line_number,
+          line_number: *line_number,
           static_type: check_type(
-            line_number,
+            *line_number,
             type_errors,
             expected_type,
             ExpressionStaticType::BoolType,
           ),
-          operator,
+          operator: *operator,
           e1: type_check_expression(
             functions_environment,
             readable_values_environment,
             global_values_environment,
             ExpressionStaticType::BoolType,
             type_errors,
-            e1,
+            &*e1,
           ),
           e2: type_check_expression(
             functions_environment,
@@ -227,27 +227,27 @@ fn type_check_expression(
             global_values_environment,
             ExpressionStaticType::BoolType,
             type_errors,
-            e2,
+            &*e2,
           ),
         })
       }
       BinaryOperator::EQ | BinaryOperator::NE => {
         Box::new(SourceLanguageExpression::BinaryExpression {
-          line_number,
+          line_number: *line_number,
           static_type: check_type(
-            line_number,
+            *line_number,
             type_errors,
             expected_type,
             ExpressionStaticType::BoolType,
           ),
-          operator,
+          operator: *operator,
           e1: type_check_expression(
             functions_environment,
             readable_values_environment,
             global_values_environment,
             ExpressionStaticType::IntType,
             type_errors,
-            e1,
+            &*e1,
           ),
           e2: type_check_expression(
             functions_environment,
@@ -255,19 +255,19 @@ fn type_check_expression(
             global_values_environment,
             ExpressionStaticType::IntType,
             type_errors,
-            e2,
+            &*e2,
           ),
         })
       }
     },
-    SourceLanguageExpression::IfElseExpression {
+    &SourceLanguageExpression::IfElseExpression {
       line_number,
       static_type: _,
       condition,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
-      line_number,
+      line_number: *line_number,
       static_type: expected_type,
       condition: type_check_expression(
         functions_environment,
@@ -275,7 +275,7 @@ fn type_check_expression(
         global_values_environment,
         ExpressionStaticType::BoolType,
         type_errors,
-        condition,
+        &*condition,
       ),
       e1: type_check_expression(
         functions_environment,
@@ -283,7 +283,7 @@ fn type_check_expression(
         global_values_environment,
         expected_type,
         type_errors,
-        e1,
+        &*e1,
       ),
       e2: type_check_expression(
         functions_environment,
@@ -291,30 +291,30 @@ fn type_check_expression(
         global_values_environment,
         expected_type,
         type_errors,
-        e2,
+        &*e2,
       ),
     }),
-    SourceLanguageExpression::AssignmentExpression {
+    &SourceLanguageExpression::AssignmentExpression {
       line_number,
       static_type: _,
       identifier,
       assigned_expression,
     } => Box::new(SourceLanguageExpression::AssignmentExpression {
-      line_number,
+      line_number: *line_number,
       static_type: check_type(
-        line_number,
+        *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::VoidType,
       ),
       identifier: {
-        if !(*global_values_environment).contains(&identifier) {
+        if !(*global_values_environment).contains(identifier) {
           type_errors.push(format!(
             "Line {:}: Undefined global variable `{:}`.",
             line_number, identifier
           ));
         }
-        identifier
+        (*identifier).clone()
       },
       assigned_expression: type_check_expression(
         functions_environment,
@@ -322,17 +322,17 @@ fn type_check_expression(
         global_values_environment,
         ExpressionStaticType::IntType,
         type_errors,
-        assigned_expression,
+        &*assigned_expression,
       ),
     }),
-    SourceLanguageExpression::ChainExpression {
+    &SourceLanguageExpression::ChainExpression {
       line_number,
       static_type: _,
       expressions,
     } => Box::new(SourceLanguageExpression::ChainExpression {
-      line_number,
+      line_number: *line_number,
       static_type: check_type(
-        line_number,
+        *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::VoidType,
@@ -346,7 +346,7 @@ fn type_check_expression(
             global_values_environment,
             ExpressionStaticType::VoidType,
             type_errors,
-            sub_expression,
+            &*sub_expression,
           ));
         }
         checked_expressions
@@ -357,8 +357,8 @@ fn type_check_expression(
 
 fn type_check_program(
   functions_environment: HashMap<String, FunctionType>,
-  program: Box<SourceLanguageProgram>,
-) -> (Box<SourceLanguageProgram>, Vec<String>) {
+  program: &SourceLanguageProgram,
+) -> (SourceLanguageProgram, Vec<String>) {
   let SourceLanguageProgram {
     global_variable_definitions,
     function_definitions,
@@ -399,25 +399,21 @@ fn type_check_program(
   }
 
   for function_definition in function_definitions {
-    let SourceLanguageFunctionDefinition {
-      line_number,
-      identifier,
-      function_arguments,
-      return_type,
-      body,
-    } = &*function_definition;
-
-    let name = (*identifier).clone();
+    let name = function_definition.identifier.clone();
     if mutable_patched_functions_environment.contains_key(&name) {
       type_errors.push(format!(
         "Line {:}: Duplicate function: `{:}`",
-        line_number, name
+        function_definition.line_number, name
       ))
     }
 
     let function_type = FunctionType {
-      argument_types: function_arguments.iter().map(|(_, t)| *t).collect(),
-      return_type: *return_type,
+      argument_types: function_definition
+        .function_arguments
+        .iter()
+        .map(|(_, t)| *t)
+        .collect(),
+      return_type: function_definition.return_type,
     };
     mutable_patched_functions_environment =
       mutable_patched_functions_environment.update(name, function_type);
@@ -427,28 +423,28 @@ fn type_check_program(
       readable_values_environment =
         readable_values_environment.update((*v).clone(), ExpressionStaticType::IntType);
     }
-    for (parameter_name, parameter_type) in function_arguments {
-      let name = (*parameter_name).clone();
+    for (parameter_name, parameter_type) in &*function_definition.function_arguments {
+      let name = parameter_name.clone();
       if readable_values_environment.contains_key(&name) {
         type_errors.push(format!(
           "Line {:}: Duplicate function: `{:}`",
-          line_number, name
+          function_definition.line_number, name
         ))
       }
       readable_values_environment = readable_values_environment.update(name, *parameter_type);
     }
     checked_functions.push(SourceLanguageFunctionDefinition {
-      line_number: *line_number,
-      identifier: (*identifier).clone(),
-      function_arguments: (*function_arguments).clone(),
-      return_type: *return_type,
+      line_number: function_definition.line_number,
+      identifier: function_definition.identifier.clone(),
+      function_arguments: (function_definition.function_arguments).clone(),
+      return_type: function_definition.return_type,
       body: type_check_expression(
         &mutable_patched_functions_environment,
         &readable_values_environment,
         &global_values_environment,
-        *return_type,
+        function_definition.return_type,
         &mut type_errors,
-        (*body).clone(),
+        &*function_definition.body,
       ),
     })
   }
@@ -461,21 +457,21 @@ fn type_check_program(
     ));
   }
 
-  let checked_program = Box::new(SourceLanguageProgram {
+  let checked_program = SourceLanguageProgram {
     global_variable_definitions: checked_global_variables,
     function_definitions: checked_functions,
-  });
+  };
   (checked_program, type_errors)
 }
 
 pub fn get_type_checked_program(
   functions_environment: HashMap<String, FunctionType>,
   source_string: String,
-) -> Result<Box<SourceLanguageProgram>, Vec<String>> {
+) -> Result<SourceLanguageProgram, Vec<String>> {
   let generated_parser = SourceLanguageProgramParser::new();
   match generated_parser.parse(source_string.as_str()) {
     Ok(program) => {
-      let (checked_program, errors) = type_check_program(functions_environment, program);
+      let (checked_program, errors) = type_check_program(functions_environment, &*program);
       if errors.len() > 0 {
         Err(errors)
       } else {
