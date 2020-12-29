@@ -6,11 +6,11 @@ use crate::inliner::program_inline;
 use std::collections::HashMap;
 
 fn pretty_print(
-  expression: Box<SourceLanguageExpression>,
+  expression: &SourceLanguageExpression,
   string_builder: &mut String,
   variable_replacement_map: &HashMap<String, i32>,
 ) -> () {
-  match *expression {
+  match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number: _,
       static_type: _,
@@ -26,7 +26,7 @@ fn pretty_print(
       identifier,
     } => string_builder.push_str(&format!(
       "mem[{:}]",
-      *variable_replacement_map.get(&identifier).unwrap()
+      *variable_replacement_map.get(identifier).unwrap()
     )),
     SourceLanguageExpression::FunctionCallExpression {
       line_number: _,
@@ -34,7 +34,7 @@ fn pretty_print(
       function_name,
       function_arguments,
     } => {
-      if static_type == ExpressionStaticType::VoidType {
+      if *static_type == ExpressionStaticType::VoidType {
         string_builder.push(' ');
       }
       if function_name == "memsize" {
@@ -71,7 +71,7 @@ fn pretty_print(
       {
         string_builder.push_str(&format!("{:}[", function_name));
         pretty_print(
-          function_arguments[0].clone(),
+          &function_arguments[0],
           string_builder,
           variable_replacement_map,
         );
@@ -87,7 +87,7 @@ fn pretty_print(
       e1,
       e2,
     } => {
-      let is_condition = operator == BinaryOperator::AND || operator == BinaryOperator::OR;
+      let is_condition = *operator == BinaryOperator::AND || *operator == BinaryOperator::OR;
       string_builder.push(if is_condition { '{' } else { '(' });
       pretty_print(e1, string_builder, variable_replacement_map);
       string_builder.push(' ');
@@ -127,7 +127,7 @@ fn pretty_print(
     } => {
       string_builder.push_str(&format!(
         " mem[{:}] := ",
-        *variable_replacement_map.get(&identifier).unwrap()
+        *variable_replacement_map.get(identifier).unwrap()
       ));
       pretty_print(
         assigned_expression,
@@ -173,17 +173,9 @@ pub fn compile_to_critter_lang(program: &SourceLanguageProgram, inline_depth: us
 
   for if_else_block in if_else_blocks {
     let IfElseBlock { condition, action } = &*if_else_block;
-    pretty_print(
-      Box::new((*condition).clone()),
-      &mut string_builder,
-      &variable_replacement_map,
-    );
+    pretty_print(condition, &mut string_builder, &variable_replacement_map);
     string_builder.push_str(" -->");
-    pretty_print(
-      Box::new((*action).clone()),
-      &mut string_builder,
-      &variable_replacement_map,
-    );
+    pretty_print(action, &mut string_builder, &variable_replacement_map);
     string_builder.push_str(";\n");
   }
 

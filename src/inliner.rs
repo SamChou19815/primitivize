@@ -28,7 +28,7 @@ fn inline_function(
     } => Box::new(SourceLanguageExpression::VariableExpression {
       line_number: *line_number,
       static_type: *static_type,
-      identifier: (*identifier).clone(),
+      identifier: identifier.clone(),
     }),
     SourceLanguageExpression::FunctionCallExpression {
       line_number,
@@ -116,28 +116,28 @@ fn inline_function(
 }
 
 fn stub_function_call(
-  expression: Box<SourceLanguageExpression>,
+  expression: &SourceLanguageExpression,
   function_name_to_stub: &String,
   default_expression: &SourceLanguageExpression,
 ) -> Box<SourceLanguageExpression> {
-  match *expression {
+  match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number,
       static_type,
       literal,
     } => Box::new(SourceLanguageExpression::LiteralExpression {
-      line_number,
-      static_type,
-      literal,
+      line_number: *line_number,
+      static_type: *static_type,
+      literal: *literal,
     }),
     SourceLanguageExpression::VariableExpression {
       line_number,
       static_type,
       identifier,
     } => Box::new(SourceLanguageExpression::VariableExpression {
-      line_number,
-      static_type,
-      identifier,
+      line_number: *line_number,
+      static_type: *static_type,
+      identifier: identifier.clone(),
     }),
     SourceLanguageExpression::FunctionCallExpression {
       line_number,
@@ -145,12 +145,12 @@ fn stub_function_call(
       function_name,
       function_arguments,
     } => {
-      if function_name != *function_name_to_stub {
+      if *function_name != *function_name_to_stub {
         Box::new(SourceLanguageExpression::FunctionCallExpression {
-          line_number,
-          static_type,
-          function_name,
-          function_arguments,
+          line_number: *line_number,
+          static_type: *static_type,
+          function_name: function_name.clone(),
+          function_arguments: function_arguments.clone(),
         })
       } else {
         Box::new((*default_expression).clone())
@@ -163,9 +163,9 @@ fn stub_function_call(
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::BinaryExpression {
-      line_number,
-      static_type,
-      operator,
+      line_number: *line_number,
+      static_type: *static_type,
+      operator: *operator,
       e1: stub_function_call(e1, function_name_to_stub, default_expression),
       e2: stub_function_call(e2, function_name_to_stub, default_expression),
     }),
@@ -176,8 +176,8 @@ fn stub_function_call(
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
-      line_number,
-      static_type,
+      line_number: *line_number,
+      static_type: *static_type,
       condition: stub_function_call(condition, function_name_to_stub, default_expression),
       e1: stub_function_call(e1, function_name_to_stub, default_expression),
       e2: stub_function_call(e2, function_name_to_stub, default_expression),
@@ -188,9 +188,9 @@ fn stub_function_call(
       identifier,
       assigned_expression,
     } => Box::new(SourceLanguageExpression::AssignmentExpression {
-      line_number,
-      static_type,
-      identifier,
+      line_number: *line_number,
+      static_type: *static_type,
+      identifier: (*identifier).clone(),
       assigned_expression: stub_function_call(
         assigned_expression,
         function_name_to_stub,
@@ -211,8 +211,8 @@ fn stub_function_call(
         ));
       }
       Box::new(SourceLanguageExpression::ChainExpression {
-        line_number,
-        static_type,
+        line_number: *line_number,
+        static_type: *static_type,
         expressions: replaced_expressions,
       })
     }
@@ -244,14 +244,14 @@ fn function_self_inline(
       expressions: Vec::new(),
     },
   };
-  body = stub_function_call(body, &function.identifier, &default_expression);
+  body = stub_function_call(&body, &function.identifier, &default_expression);
 
   SourceLanguageFunctionDefinition {
     line_number: function.line_number,
     identifier: function.identifier.clone(),
     function_arguments: function.function_arguments.clone(),
     return_type: function.return_type,
-    body: compile_time_evaluation(body),
+    body: compile_time_evaluation(&body),
   }
 }
 
@@ -263,7 +263,7 @@ pub fn program_inline(
   let mut main_expression = functions[functions.len() - 1].body.clone();
 
   for i in (0..(functions.len() - 1)).rev() {
-    main_expression = compile_time_evaluation(inline_function(
+    main_expression = compile_time_evaluation(&inline_function(
       &main_expression,
       &function_self_inline(&functions[i], inline_depth),
     ));
@@ -271,6 +271,6 @@ pub fn program_inline(
 
   Box::new(FullyInlinedProgram {
     global_variable_definitions: program.global_variable_definitions.clone(),
-    if_else_blocks: transform_to_if_else_blocks(main_expression),
+    if_else_blocks: transform_to_if_else_blocks(&main_expression),
   })
 }
