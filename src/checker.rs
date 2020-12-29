@@ -34,55 +34,57 @@ fn type_check_expression(
   match &expression {
     &SourceLanguageExpression::LiteralExpression {
       line_number,
-      static_type: _,
       literal: LiteralValue::IntLiteral(i),
-    } => Box::new(SourceLanguageExpression::LiteralExpression {
-      line_number: *line_number,
-      static_type: check_type(
+    } => {
+      check_type(
         *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::IntType,
-      ),
-      literal: LiteralValue::IntLiteral(*i),
-    }),
+      );
+      Box::new(SourceLanguageExpression::LiteralExpression {
+        line_number: *line_number,
+        literal: LiteralValue::IntLiteral(*i),
+      })
+    }
     &SourceLanguageExpression::LiteralExpression {
       line_number,
-      static_type: _,
       literal: LiteralValue::BoolLiteral(b),
-    } => Box::new(SourceLanguageExpression::LiteralExpression {
-      line_number: *line_number,
-      static_type: check_type(
+    } => {
+      check_type(
         *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::BoolType,
-      ),
-      literal: LiteralValue::BoolLiteral(*b),
-    }),
+      );
+      Box::new(SourceLanguageExpression::LiteralExpression {
+        line_number: *line_number,
+        literal: LiteralValue::BoolLiteral(*b),
+      })
+    }
     &SourceLanguageExpression::VariableExpression {
       line_number,
-      static_type: _,
       identifier,
-    } => Box::new(SourceLanguageExpression::VariableExpression {
-      line_number: *line_number,
-      static_type: {
-        match (*readable_values_environment).get(identifier) {
-          Some(&actual_type) => check_type(*line_number, type_errors, expected_type, actual_type),
-          None => {
-            type_errors.push(format!(
-              "Line {:}: Undefined variable `{:}`.",
-              line_number, identifier
-            ));
-            ExpressionStaticType::IntType
-          }
+    } => {
+      match (*readable_values_environment).get(identifier) {
+        Some(&actual_type) => {
+          check_type(*line_number, type_errors, expected_type, actual_type);
         }
-      },
-      identifier: (*identifier).clone(),
-    }),
+        None => {
+          type_errors.push(format!(
+            "Line {:}: Undefined variable `{:}`.",
+            line_number, identifier
+          ));
+        }
+      };
+      Box::new(SourceLanguageExpression::VariableExpression {
+        line_number: *line_number,
+        identifier: (*identifier).clone(),
+      })
+    }
     &SourceLanguageExpression::FunctionCallExpression {
       line_number,
-      static_type,
+      static_type: _,
       function_name,
       function_arguments,
     } => {
@@ -94,7 +96,7 @@ fn type_check_expression(
           ));
           Box::new(SourceLanguageExpression::FunctionCallExpression {
             line_number: *line_number,
-            static_type: *static_type,
+            static_type: ExpressionStaticType::VoidType,
             function_name: (*function_name).clone(),
             function_arguments: (*function_arguments).clone(),
           })
@@ -140,7 +142,6 @@ fn type_check_expression(
     }
     &SourceLanguageExpression::BinaryExpression {
       line_number,
-      static_type: _,
       operator,
       e1,
       e2,
@@ -149,41 +150,43 @@ fn type_check_expression(
       | BinaryOperator::DIV
       | BinaryOperator::MOD
       | BinaryOperator::PLUS
-      | BinaryOperator::MINUS => Box::new(SourceLanguageExpression::BinaryExpression {
-        line_number: *line_number,
-        static_type: check_type(
+      | BinaryOperator::MINUS => {
+        check_type(
           *line_number,
           type_errors,
           expected_type,
           ExpressionStaticType::IntType,
-        ),
-        operator: *operator,
-        e1: type_check_expression(
-          functions_environment,
-          readable_values_environment,
-          global_values_environment,
-          ExpressionStaticType::IntType,
-          type_errors,
-          &*e1,
-        ),
-        e2: type_check_expression(
-          functions_environment,
-          readable_values_environment,
-          global_values_environment,
-          ExpressionStaticType::IntType,
-          type_errors,
-          &*e2,
-        ),
-      }),
-      BinaryOperator::LT | BinaryOperator::LE | BinaryOperator::GT | BinaryOperator::GE => {
+        );
         Box::new(SourceLanguageExpression::BinaryExpression {
           line_number: *line_number,
-          static_type: check_type(
-            *line_number,
+          operator: *operator,
+          e1: type_check_expression(
+            functions_environment,
+            readable_values_environment,
+            global_values_environment,
+            ExpressionStaticType::IntType,
             type_errors,
-            expected_type,
-            ExpressionStaticType::BoolType,
+            &*e1,
           ),
+          e2: type_check_expression(
+            functions_environment,
+            readable_values_environment,
+            global_values_environment,
+            ExpressionStaticType::IntType,
+            type_errors,
+            &*e2,
+          ),
+        })
+      }
+      BinaryOperator::LT | BinaryOperator::LE | BinaryOperator::GT | BinaryOperator::GE => {
+        check_type(
+          *line_number,
+          type_errors,
+          expected_type,
+          ExpressionStaticType::BoolType,
+        );
+        Box::new(SourceLanguageExpression::BinaryExpression {
+          line_number: *line_number,
           operator: *operator,
           e1: type_check_expression(
             functions_environment,
@@ -204,14 +207,14 @@ fn type_check_expression(
         })
       }
       BinaryOperator::AND | BinaryOperator::OR => {
+        check_type(
+          *line_number,
+          type_errors,
+          expected_type,
+          ExpressionStaticType::BoolType,
+        );
         Box::new(SourceLanguageExpression::BinaryExpression {
           line_number: *line_number,
-          static_type: check_type(
-            *line_number,
-            type_errors,
-            expected_type,
-            ExpressionStaticType::BoolType,
-          ),
           operator: *operator,
           e1: type_check_expression(
             functions_environment,
@@ -232,14 +235,14 @@ fn type_check_expression(
         })
       }
       BinaryOperator::EQ | BinaryOperator::NE => {
+        check_type(
+          *line_number,
+          type_errors,
+          expected_type,
+          ExpressionStaticType::BoolType,
+        );
         Box::new(SourceLanguageExpression::BinaryExpression {
           line_number: *line_number,
-          static_type: check_type(
-            *line_number,
-            type_errors,
-            expected_type,
-            ExpressionStaticType::BoolType,
-          ),
           operator: *operator,
           e1: type_check_expression(
             functions_environment,
@@ -262,13 +265,11 @@ fn type_check_expression(
     },
     &SourceLanguageExpression::IfElseExpression {
       line_number,
-      static_type: _,
       condition,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
       line_number: *line_number,
-      static_type: expected_type,
       condition: type_check_expression(
         functions_environment,
         readable_values_environment,
@@ -296,62 +297,64 @@ fn type_check_expression(
     }),
     &SourceLanguageExpression::AssignmentExpression {
       line_number,
-      static_type: _,
       identifier,
       assigned_expression,
-    } => Box::new(SourceLanguageExpression::AssignmentExpression {
-      line_number: *line_number,
-      static_type: check_type(
+    } => {
+      check_type(
         *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::VoidType,
-      ),
-      identifier: {
-        if !(*global_values_environment).contains(identifier) {
-          type_errors.push(format!(
-            "Line {:}: Undefined global variable `{:}`.",
-            line_number, identifier
-          ));
-        }
-        (*identifier).clone()
-      },
-      assigned_expression: type_check_expression(
-        functions_environment,
-        readable_values_environment,
-        global_values_environment,
-        ExpressionStaticType::IntType,
-        type_errors,
-        &*assigned_expression,
-      ),
-    }),
+      );
+      Box::new(SourceLanguageExpression::AssignmentExpression {
+        line_number: *line_number,
+        identifier: {
+          if !(*global_values_environment).contains(identifier) {
+            type_errors.push(format!(
+              "Line {:}: Undefined global variable `{:}`.",
+              line_number, identifier
+            ));
+          }
+          (*identifier).clone()
+        },
+        assigned_expression: type_check_expression(
+          functions_environment,
+          readable_values_environment,
+          global_values_environment,
+          ExpressionStaticType::IntType,
+          type_errors,
+          &*assigned_expression,
+        ),
+      })
+    }
     &SourceLanguageExpression::ChainExpression {
       line_number,
-      static_type: _,
       expressions,
-    } => Box::new(SourceLanguageExpression::ChainExpression {
-      line_number: *line_number,
-      static_type: check_type(
+    } => {
+      check_type(
         *line_number,
         type_errors,
         expected_type,
         ExpressionStaticType::VoidType,
-      ),
-      expressions: {
-        let mut checked_expressions = Vec::new();
-        for sub_expression in expressions {
-          checked_expressions.push(type_check_expression(
-            functions_environment,
-            readable_values_environment,
-            global_values_environment,
-            ExpressionStaticType::VoidType,
-            type_errors,
-            &*sub_expression,
-          ));
-        }
-        checked_expressions
-      },
-    }),
+      );
+      Box::new(SourceLanguageExpression::ChainExpression {
+        line_number: *line_number,
+        expressions: {
+          let mut checked_expressions = Vec::new();
+          for sub_expression in expressions {
+            checked_expressions.push(type_check_expression(
+              functions_environment,
+              readable_values_environment,
+              global_values_environment,
+              ExpressionStaticType::VoidType,
+              type_errors,
+              &*sub_expression,
+            ));
+          }
+          checked_expressions
+        },
+      })
+    }
   }
 }
 

@@ -14,20 +14,16 @@ fn inline_function(
   match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number,
-      static_type,
       literal,
     } => Box::new(SourceLanguageExpression::LiteralExpression {
       line_number: *line_number,
-      static_type: *static_type,
       literal: *literal,
     }),
     SourceLanguageExpression::VariableExpression {
       line_number,
-      static_type,
       identifier,
     } => Box::new(SourceLanguageExpression::VariableExpression {
       line_number: *line_number,
-      static_type: *static_type,
       identifier: identifier.clone(),
     }),
     SourceLanguageExpression::FunctionCallExpression {
@@ -62,44 +58,37 @@ fn inline_function(
     }
     SourceLanguageExpression::BinaryExpression {
       line_number,
-      static_type,
       operator,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::BinaryExpression {
       line_number: *line_number,
-      static_type: *static_type,
       operator: *operator,
       e1: inline_function(e1, function_to_inline),
       e2: inline_function(e2, function_to_inline),
     }),
     SourceLanguageExpression::IfElseExpression {
       line_number,
-      static_type,
       condition,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
       line_number: *line_number,
-      static_type: *static_type,
       condition: inline_function(condition, function_to_inline),
       e1: inline_function(e1, function_to_inline),
       e2: inline_function(e2, function_to_inline),
     }),
     SourceLanguageExpression::AssignmentExpression {
       line_number,
-      static_type,
       identifier,
       assigned_expression,
     } => Box::new(SourceLanguageExpression::AssignmentExpression {
       line_number: *line_number,
-      static_type: *static_type,
       identifier: (*identifier).clone(),
       assigned_expression: inline_function(assigned_expression, function_to_inline),
     }),
     SourceLanguageExpression::ChainExpression {
       line_number,
-      static_type,
       expressions,
     } => {
       let mut replaced_expressions = Vec::new();
@@ -108,7 +97,6 @@ fn inline_function(
       }
       Box::new(SourceLanguageExpression::ChainExpression {
         line_number: *line_number,
-        static_type: *static_type,
         expressions: replaced_expressions,
       })
     }
@@ -123,20 +111,16 @@ fn stub_function_call(
   match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number,
-      static_type,
       literal,
     } => Box::new(SourceLanguageExpression::LiteralExpression {
       line_number: *line_number,
-      static_type: *static_type,
       literal: *literal,
     }),
     SourceLanguageExpression::VariableExpression {
       line_number,
-      static_type,
       identifier,
     } => Box::new(SourceLanguageExpression::VariableExpression {
       line_number: *line_number,
-      static_type: *static_type,
       identifier: identifier.clone(),
     }),
     SourceLanguageExpression::FunctionCallExpression {
@@ -158,38 +142,32 @@ fn stub_function_call(
     }
     SourceLanguageExpression::BinaryExpression {
       line_number,
-      static_type,
       operator,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::BinaryExpression {
       line_number: *line_number,
-      static_type: *static_type,
       operator: *operator,
       e1: stub_function_call(e1, function_name_to_stub, default_expression),
       e2: stub_function_call(e2, function_name_to_stub, default_expression),
     }),
     SourceLanguageExpression::IfElseExpression {
       line_number,
-      static_type,
       condition,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
       line_number: *line_number,
-      static_type: *static_type,
       condition: stub_function_call(condition, function_name_to_stub, default_expression),
       e1: stub_function_call(e1, function_name_to_stub, default_expression),
       e2: stub_function_call(e2, function_name_to_stub, default_expression),
     }),
     SourceLanguageExpression::AssignmentExpression {
       line_number,
-      static_type,
       identifier,
       assigned_expression,
     } => Box::new(SourceLanguageExpression::AssignmentExpression {
       line_number: *line_number,
-      static_type: *static_type,
       identifier: (*identifier).clone(),
       assigned_expression: stub_function_call(
         assigned_expression,
@@ -199,7 +177,6 @@ fn stub_function_call(
     }),
     SourceLanguageExpression::ChainExpression {
       line_number,
-      static_type,
       expressions,
     } => {
       let mut replaced_expressions = Vec::new();
@@ -212,7 +189,6 @@ fn stub_function_call(
       }
       Box::new(SourceLanguageExpression::ChainExpression {
         line_number: *line_number,
-        static_type: *static_type,
         expressions: replaced_expressions,
       })
     }
@@ -230,17 +206,14 @@ fn function_self_inline(
   let default_expression = match function.return_type {
     ExpressionStaticType::BoolType => SourceLanguageExpression::LiteralExpression {
       line_number: 0,
-      static_type: ExpressionStaticType::BoolType,
       literal: LiteralValue::BoolLiteral(false),
     },
     ExpressionStaticType::IntType => SourceLanguageExpression::LiteralExpression {
       line_number: 0,
-      static_type: ExpressionStaticType::IntType,
       literal: LiteralValue::IntLiteral(0),
     },
     ExpressionStaticType::VoidType => SourceLanguageExpression::ChainExpression {
       line_number: 0,
-      static_type: ExpressionStaticType::VoidType,
       expressions: Vec::new(),
     },
   };

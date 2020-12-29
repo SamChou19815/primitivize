@@ -48,12 +48,10 @@ pub struct FunctionType {
 pub enum SourceLanguageExpression {
   LiteralExpression {
     line_number: usize,
-    static_type: ExpressionStaticType,
     literal: LiteralValue,
   },
   VariableExpression {
     line_number: usize,
-    static_type: ExpressionStaticType,
     identifier: String,
   },
   FunctionCallExpression {
@@ -64,27 +62,23 @@ pub enum SourceLanguageExpression {
   },
   BinaryExpression {
     line_number: usize,
-    static_type: ExpressionStaticType,
     operator: BinaryOperator,
     e1: Box<SourceLanguageExpression>,
     e2: Box<SourceLanguageExpression>,
   },
   IfElseExpression {
     line_number: usize,
-    static_type: ExpressionStaticType,
     condition: Box<SourceLanguageExpression>,
     e1: Box<SourceLanguageExpression>,
     e2: Box<SourceLanguageExpression>,
   },
   AssignmentExpression {
     line_number: usize,
-    static_type: ExpressionStaticType,
     identifier: String,
     assigned_expression: Box<SourceLanguageExpression>,
   },
   ChainExpression {
     line_number: usize,
-    static_type: ExpressionStaticType,
     expressions: Vec<Box<SourceLanguageExpression>>,
   },
 }

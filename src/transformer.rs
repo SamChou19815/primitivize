@@ -1,25 +1,19 @@
-use crate::ast::{
-  BinaryOperator, ExpressionStaticType, IfElseBlock, LiteralValue, SourceLanguageExpression,
-};
+use crate::ast::{BinaryOperator, IfElseBlock, LiteralValue, SourceLanguageExpression};
 
 fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExpression> {
   match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number,
-      static_type,
       literal,
     } => Box::new(SourceLanguageExpression::LiteralExpression {
       line_number: *line_number,
-      static_type: *static_type,
       literal: *literal,
     }),
     SourceLanguageExpression::VariableExpression {
       line_number,
-      static_type,
       identifier,
     } => Box::new(SourceLanguageExpression::VariableExpression {
       line_number: *line_number,
-      static_type: *static_type,
       identifier: identifier.clone(),
     }),
     SourceLanguageExpression::FunctionCallExpression {
@@ -30,7 +24,6 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
     } => Box::new(expression.clone()), // Assume no more if-else inside leaf function calls.
     SourceLanguageExpression::BinaryExpression {
       line_number,
-      static_type,
       operator,
       e1,
       e2,
@@ -41,60 +34,50 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
         (
           SourceLanguageExpression::IfElseExpression {
             line_number: _,
-            static_type: _,
             condition: e1c,
             e1: e1e1,
             e2: e1e2,
           },
           SourceLanguageExpression::IfElseExpression {
             line_number: _,
-            static_type: _,
             condition: e2c,
             e1: e2e1,
             e2: e2e2,
           },
         ) => Box::new(SourceLanguageExpression::IfElseExpression {
           line_number: *line_number,
-          static_type: *static_type,
           condition: Box::new(SourceLanguageExpression::BinaryExpression {
             line_number: *line_number,
-            static_type: ExpressionStaticType::BoolType,
             operator: BinaryOperator::AND,
             e1: e1c.clone(),
             e2: e2c.clone(),
           }),
           e1: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
             line_number: *line_number,
-            static_type: *static_type,
             operator: *operator,
             e1: e1e1.clone(),
             e2: e2e1.clone(),
           }),
           e2: Box::new(SourceLanguageExpression::IfElseExpression {
             line_number: *line_number,
-            static_type: *static_type,
             condition: e1c.clone(),
             e1: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
               line_number: *line_number,
-              static_type: *static_type,
               operator: *operator,
               e1: e1e1.clone(),
               e2: e2e2.clone(),
             }),
             e2: Box::new(SourceLanguageExpression::IfElseExpression {
               line_number: *line_number,
-              static_type: *static_type,
               condition: e2c.clone(),
               e1: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
                 line_number: *line_number,
-                static_type: *static_type,
                 operator: *operator,
                 e1: e1e2.clone(),
                 e2: e2e1.clone(),
               }),
               e2: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
                 line_number: *line_number,
-                static_type: *static_type,
                 operator: *operator,
                 e1: e1e2.clone(),
                 e2: e2e2.clone(),
@@ -105,7 +88,6 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
         (
           SourceLanguageExpression::IfElseExpression {
             line_number: _,
-            static_type: _,
             condition: e1c,
             e1: e1e1,
             e2: e1e2,
@@ -113,18 +95,15 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
           hoisted_e2_unboxed,
         ) => Box::new(SourceLanguageExpression::IfElseExpression {
           line_number: *line_number,
-          static_type: *static_type,
           condition: e1c,
           e1: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
             line_number: *line_number,
-            static_type: *static_type,
             operator: *operator,
             e1: e1e1,
             e2: Box::new(hoisted_e2_unboxed.clone()),
           }),
           e2: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
             line_number: *line_number,
-            static_type: *static_type,
             operator: *operator,
             e1: e1e2,
             e2: Box::new(hoisted_e2_unboxed.clone()),
@@ -134,25 +113,21 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
           hoisted_e1_unboxed,
           SourceLanguageExpression::IfElseExpression {
             line_number: _,
-            static_type: _,
             condition: e2c,
             e1: e2e1,
             e2: e2e2,
           },
         ) => Box::new(SourceLanguageExpression::IfElseExpression {
           line_number: *line_number,
-          static_type: *static_type,
           condition: e2c,
           e1: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
             line_number: *line_number,
-            static_type: *static_type,
             operator: *operator,
             e1: Box::new(hoisted_e1_unboxed.clone()),
             e2: e2e1,
           }),
           e2: hoist_if_else(&SourceLanguageExpression::BinaryExpression {
             line_number: *line_number,
-            static_type: *static_type,
             operator: *operator,
             e1: Box::new(hoisted_e1_unboxed.clone()),
             e2: e2e2,
@@ -161,7 +136,6 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
         (hoisted_e1_unboxed, hoisted_e2_unboxed) => {
           Box::new(SourceLanguageExpression::BinaryExpression {
             line_number: *line_number,
-            static_type: *static_type,
             operator: *operator,
             e1: Box::new(hoisted_e1_unboxed),
             e2: Box::new(hoisted_e2_unboxed),
@@ -171,42 +145,35 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
     }
     SourceLanguageExpression::IfElseExpression {
       line_number,
-      static_type,
       condition,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
       line_number: *line_number,
-      static_type: *static_type,
       condition: hoist_if_else(condition), // TODO ???
       e1: hoist_if_else(e1),
       e2: hoist_if_else(e2),
     }),
     SourceLanguageExpression::AssignmentExpression {
       line_number,
-      static_type,
       identifier,
       assigned_expression,
     } => match *hoist_if_else(assigned_expression) {
       SourceLanguageExpression::IfElseExpression {
         line_number: _,
-        static_type: _,
         condition,
         e1,
         e2,
       } => Box::new(SourceLanguageExpression::IfElseExpression {
         line_number: *line_number,
-        static_type: *static_type,
         condition,
         e1: hoist_if_else(&SourceLanguageExpression::AssignmentExpression {
           line_number: *line_number,
-          static_type: *static_type,
           identifier: identifier.clone(),
           assigned_expression: e1,
         }),
         e2: hoist_if_else(&SourceLanguageExpression::AssignmentExpression {
           line_number: *line_number,
-          static_type: *static_type,
           identifier: identifier.clone(),
           assigned_expression: e2,
         }),
@@ -215,7 +182,6 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
     },
     SourceLanguageExpression::ChainExpression {
       line_number,
-      static_type,
       expressions,
     } => {
       if expressions.len() == 0 {
@@ -227,61 +193,50 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
         let hoisted_e2 = hoist_if_else(&mutable_expressions.pop().unwrap());
         let hoisted_e1 = hoist_if_else(&SourceLanguageExpression::ChainExpression {
           line_number: *line_number,
-          static_type: *static_type,
           expressions: mutable_expressions,
         });
         match (*hoisted_e1, *hoisted_e2) {
           (
             SourceLanguageExpression::IfElseExpression {
               line_number: _,
-              static_type: _,
               condition: e1c,
               e1: e1e1,
               e2: e1e2,
             },
             SourceLanguageExpression::IfElseExpression {
               line_number: _,
-              static_type: _,
               condition: e2c,
               e1: e2e1,
               e2: e2e2,
             },
           ) => Box::new(SourceLanguageExpression::IfElseExpression {
             line_number: *line_number,
-            static_type: *static_type,
             condition: Box::new(SourceLanguageExpression::BinaryExpression {
               line_number: *line_number,
-              static_type: ExpressionStaticType::BoolType,
               operator: BinaryOperator::AND,
               e1: e1c.clone(),
               e2: e2c.clone(),
             }),
             e1: hoist_if_else(&SourceLanguageExpression::ChainExpression {
               line_number: *line_number,
-              static_type: *static_type,
               expressions: vec![e1e1.clone(), e2e1.clone()],
             }),
             e2: Box::new(SourceLanguageExpression::IfElseExpression {
               line_number: *line_number,
-              static_type: *static_type,
               condition: e1c.clone(),
               e1: hoist_if_else(&SourceLanguageExpression::ChainExpression {
                 line_number: *line_number,
-                static_type: *static_type,
                 expressions: vec![e1e1.clone(), e2e2.clone()],
               }),
               e2: Box::new(SourceLanguageExpression::IfElseExpression {
                 line_number: *line_number,
-                static_type: *static_type,
                 condition: e2c.clone(),
                 e1: hoist_if_else(&SourceLanguageExpression::ChainExpression {
                   line_number: *line_number,
-                  static_type: *static_type,
                   expressions: vec![e1e2.clone(), e2e1.clone()],
                 }),
                 e2: hoist_if_else(&SourceLanguageExpression::ChainExpression {
                   line_number: *line_number,
-                  static_type: *static_type,
                   expressions: vec![e1e2.clone(), e2e2.clone()],
                 }),
               }),
@@ -290,7 +245,6 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
           (
             SourceLanguageExpression::IfElseExpression {
               line_number: _,
-              static_type: _,
               condition: e1c,
               e1: e1e1,
               e2: e1e2,
@@ -298,16 +252,13 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
             hoisted_e2_unboxed,
           ) => Box::new(SourceLanguageExpression::IfElseExpression {
             line_number: *line_number,
-            static_type: *static_type,
             condition: e1c,
             e1: hoist_if_else(&SourceLanguageExpression::ChainExpression {
               line_number: *line_number,
-              static_type: *static_type,
               expressions: vec![e1e1, Box::new(hoisted_e2_unboxed.clone())],
             }),
             e2: hoist_if_else(&SourceLanguageExpression::ChainExpression {
               line_number: *line_number,
-              static_type: *static_type,
               expressions: vec![e1e2, Box::new(hoisted_e2_unboxed.clone())],
             }),
           }),
@@ -315,30 +266,25 @@ fn hoist_if_else(expression: &SourceLanguageExpression) -> Box<SourceLanguageExp
             hoisted_e1_unboxed,
             SourceLanguageExpression::IfElseExpression {
               line_number: _,
-              static_type: _,
               condition: e2c,
               e1: e2e1,
               e2: e2e2,
             },
           ) => Box::new(SourceLanguageExpression::IfElseExpression {
             line_number: *line_number,
-            static_type: *static_type,
             condition: e2c,
             e1: hoist_if_else(&SourceLanguageExpression::ChainExpression {
               line_number: *line_number,
-              static_type: *static_type,
               expressions: vec![Box::new(hoisted_e1_unboxed.clone()), e2e1],
             }),
             e2: hoist_if_else(&SourceLanguageExpression::ChainExpression {
               line_number: *line_number,
-              static_type: *static_type,
               expressions: vec![Box::new(hoisted_e1_unboxed.clone()), e2e2],
             }),
           }),
           (hoisted_e1_unboxed, hoisted_e2_unboxed) => {
             Box::new(SourceLanguageExpression::ChainExpression {
               line_number: *line_number,
-              static_type: *static_type,
               expressions: vec![Box::new(hoisted_e1_unboxed), Box::new(hoisted_e2_unboxed)],
             })
           }
@@ -352,7 +298,6 @@ pub fn transform_to_if_else_blocks(expression: &SourceLanguageExpression) -> Vec
   match &*hoist_if_else(&expression) {
     SourceLanguageExpression::IfElseExpression {
       line_number: _,
-      static_type: _,
       condition,
       e1,
       e2,
@@ -368,7 +313,6 @@ pub fn transform_to_if_else_blocks(expression: &SourceLanguageExpression) -> Vec
         list.push(IfElseBlock {
           condition: SourceLanguageExpression::BinaryExpression {
             line_number: 1,
-            static_type: ExpressionStaticType::BoolType,
             operator: BinaryOperator::AND,
             e1: condition.clone(),
             e2: Box::new(c),
@@ -382,7 +326,6 @@ pub fn transform_to_if_else_blocks(expression: &SourceLanguageExpression) -> Vec
     hoisted => vec![IfElseBlock {
       condition: SourceLanguageExpression::LiteralExpression {
         line_number: 1,
-        static_type: ExpressionStaticType::BoolType,
         literal: LiteralValue::BoolLiteral(true),
       },
       action: (*hoisted).clone(),

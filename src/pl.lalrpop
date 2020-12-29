@@ -52,12 +52,10 @@ Identifier: String = r"[a-z][A-Za-z0-9]*" => <>.to_string();
 SimpleExpression : Box<SourceLanguageExpression> = {
   <l:@L> <literal:LiteralValue> => Box::new(SourceLanguageExpression::LiteralExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     literal: literal,
   }),
   <l:@L> <identifier: Identifier> => Box::new(SourceLanguageExpression::VariableExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     identifier,
   }),
   "(" <e: SourceLanguageExpression> ")" => e,
@@ -85,7 +83,6 @@ FactorExpression : Box<SourceLanguageExpression> = {
   <l:@L> <e1: FactorExpression> <op: FactorOp> <e2: FunctionCallExpression>
   => Box::new(SourceLanguageExpression::BinaryExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     operator: op,
     e1,
     e2,
@@ -102,7 +99,6 @@ TermExpression : Box<SourceLanguageExpression> = {
   <l:@L> <e1: TermExpression> <operator: TermOp> <e2: FactorExpression>
   => Box::new(SourceLanguageExpression::BinaryExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     operator,
     e1,
     e2,
@@ -123,7 +119,6 @@ ComparisonExpression : Box<SourceLanguageExpression> = {
   <l:@L> <e1: ComparisonExpression> <operator: ComparisonOp> <e2: TermExpression>
   => Box::new(SourceLanguageExpression::BinaryExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     operator,
     e1,
     e2,
@@ -135,7 +130,6 @@ ConjunctionExpression : Box<SourceLanguageExpression> = {
   <l:@L> <e1: ConjunctionExpression> "&&" <e2: ComparisonExpression>
   => Box::new(SourceLanguageExpression::BinaryExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     operator: BinaryOperator::AND,
     e1,
     e2,
@@ -147,7 +141,6 @@ DisjunctionExpression : Box<SourceLanguageExpression> = {
   <l:@L> <e1: DisjunctionExpression> "||" <e2: ConjunctionExpression>
   => Box::new(SourceLanguageExpression::BinaryExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     operator: BinaryOperator::OR,
     e1,
     e2,
@@ -162,7 +155,6 @@ IfElseExpression : Box<SourceLanguageExpression> = {
     <e2: IfElseExpression>
   => Box::new(SourceLanguageExpression::IfElseExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     condition,
     e1,
     e2,
@@ -174,7 +166,6 @@ AssignExpression : Box<SourceLanguageExpression> = {
   <l:@L> <identifier: Identifier> "=" <assigned_expression: IfElseExpression>
   => Box::new(SourceLanguageExpression::AssignmentExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     identifier,
     assigned_expression,
   }),
@@ -185,7 +176,6 @@ SourceLanguageExpression : Box<SourceLanguageExpression> = {
   <l:@L> "{" <expressions: Semicolon<SourceLanguageExpression>> "}"
   => Box::new(SourceLanguageExpression::ChainExpression {
     line_number: l,
-    static_type: ExpressionStaticType::VoidType,
     expressions,
   }),
   AssignExpression,

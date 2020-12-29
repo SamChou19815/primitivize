@@ -13,7 +13,6 @@ fn pretty_print(
   match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number: _,
-      static_type: _,
       literal,
     } => match literal {
       LiteralValue::BoolLiteral(true) => string_builder.push_str("1 = 1"),
@@ -22,7 +21,6 @@ fn pretty_print(
     },
     SourceLanguageExpression::VariableExpression {
       line_number: _,
-      static_type: _,
       identifier,
     } => string_builder.push_str(&format!(
       "mem[{:}]",
@@ -82,7 +80,6 @@ fn pretty_print(
     }
     SourceLanguageExpression::BinaryExpression {
       line_number: _,
-      static_type: _,
       operator,
       e1,
       e2,
@@ -114,14 +111,12 @@ fn pretty_print(
     }
     SourceLanguageExpression::IfElseExpression {
       line_number: _,
-      static_type: _,
       condition: _,
       e1: _,
       e2: _,
     } => panic!("should not be here!"),
     SourceLanguageExpression::AssignmentExpression {
       line_number: _,
-      static_type: _,
       identifier,
       assigned_expression,
     } => {
@@ -137,7 +132,6 @@ fn pretty_print(
     }
     SourceLanguageExpression::ChainExpression {
       line_number: _,
-      static_type: _,
       expressions,
     } => {
       for sub_expression in expressions {

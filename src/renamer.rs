@@ -8,21 +8,17 @@ pub fn replace_variable_in_expression(
   match &expression {
     SourceLanguageExpression::LiteralExpression {
       line_number,
-      static_type,
       literal,
     } => Box::new(SourceLanguageExpression::LiteralExpression {
       line_number: *line_number,
-      static_type: *static_type,
       literal: *literal,
     }),
     SourceLanguageExpression::VariableExpression {
       line_number,
-      static_type,
       identifier,
     } => match (*expression_replacement_map).get(identifier) {
       None => Box::new(SourceLanguageExpression::VariableExpression {
         line_number: *line_number,
-        static_type: *static_type,
         identifier: (*identifier).clone(),
       }),
       Some(replacement) => (*replacement).clone(),
@@ -49,38 +45,32 @@ pub fn replace_variable_in_expression(
     }
     SourceLanguageExpression::BinaryExpression {
       line_number,
-      static_type,
       operator,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::BinaryExpression {
       line_number: *line_number,
-      static_type: *static_type,
       operator: *operator,
       e1: replace_variable_in_expression(&e1, expression_replacement_map),
       e2: replace_variable_in_expression(&e2, expression_replacement_map),
     }),
     SourceLanguageExpression::IfElseExpression {
       line_number,
-      static_type,
       condition,
       e1,
       e2,
     } => Box::new(SourceLanguageExpression::IfElseExpression {
       line_number: *line_number,
-      static_type: *static_type,
       condition: replace_variable_in_expression(&condition, expression_replacement_map),
       e1: replace_variable_in_expression(&e1, expression_replacement_map),
       e2: replace_variable_in_expression(&e2, expression_replacement_map),
     }),
     SourceLanguageExpression::AssignmentExpression {
       line_number,
-      static_type,
       identifier,
       assigned_expression,
     } => Box::new(SourceLanguageExpression::AssignmentExpression {
       line_number: *line_number,
-      static_type: *static_type,
       identifier: (*identifier).clone(),
       assigned_expression: replace_variable_in_expression(
         &assigned_expression,
@@ -89,7 +79,6 @@ pub fn replace_variable_in_expression(
     }),
     SourceLanguageExpression::ChainExpression {
       line_number,
-      static_type,
       expressions,
     } => {
       let mut replaced_expressions = Vec::new();
@@ -101,7 +90,6 @@ pub fn replace_variable_in_expression(
       }
       Box::new(SourceLanguageExpression::ChainExpression {
         line_number: *line_number,
-        static_type: *static_type,
         expressions: replaced_expressions,
       })
     }
