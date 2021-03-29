@@ -24,5 +24,5 @@ complete language.
 The type-checker will be invoked before compilation to reject all ill-formed code before running.
 
 The compiler will compile the source code of this language to an AST that is already lowered to
-a set of variable declarations and a single unit expression. The user of this library can take the
-primitive AST and translate it into more primitive languages.
+a set of variable declarations and a single unit expression. It will emit CS 2112 critter language
+code that has this form.
